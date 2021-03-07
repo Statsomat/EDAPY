@@ -1,0 +1,229 @@
+---
+title: "Descriptive Statistics and Graphics"
+---
+
+
+```{r setup, include=FALSE}
+library(reticulate)
+virtualenv_create('shiny-app-env', python= 'python3')
+use_virtualenv('shiny-app-env', required = T)
+```
+
+
+```{r}
+library(knitr) # kable
+
+# Get data
+df <- params$data
+df_code <- df
+
+# Initialize further chunks
+eval0 <- FALSE
+
+tryCatch({
+  
+  df <- df[,params$vars1,drop=FALSE]
+  df2 <- df
+  
+  # Initialize next computations
+  eval0 <- TRUE
+
+}, error=function(e) {
+  
+  stop(safeError("Please try other column names for the following columns: "))
+}
+
+)
+
+if (length(setdiff(params$vars1,colnames(df))) >0) {
+  equal <- intersect(colnames(df),params$vars1)
+  kable(setdiff(params$vars1,equal),col.names = "Column")
+}
+```
+
+
+```{r, eval=eval0}
+# Call used libraries 
+library(psych)
+library(Hmisc)
+library(reshape2)
+library(ggplot2)
+library(gridExtra) # for grid.arrange
+library(PerformanceAnalytics) # for chart.ECDF
+library(car) # for qqPlot
+library(kableExtra)
+
+# Initialize next computations
+eval <- FALSE
+eval_rows <- FALSE
+
+tryCatch({
+  
+# Drop columns if all observations are missing 
+col_names_missing <- sapply(df, function(col) all(is.na(col)))
+df[ ,col_names_missing] <- list(NULL)
+df_list <- df 
+
+# Drop empty rows
+rowsums <- data.frame(sapply(df,is.na))
+if (length(which(rowSums(rowsums) == dim(df)[2])) != 0L){
+  eval_rows <- TRUE
+  rows_drop <- (which(rowSums(rowsums) == dim(df)[2]))
+  length_non_complete <- length(which(rowSums(rowsums) == dim(df)[2]))
+  df <- df[-rows_drop, ,drop=FALSE]
+}
+
+# Convert logical variables to character
+cols_logical <- sapply(df, function(col) is.logical(col))
+df[ ,cols_logical] <- sapply(df[ ,cols_logical], as.character)
+
+# Convert numerical variables with less than 7 unique values to character (missing values omitted)
+col_names_numeric <- sapply(df, function(col) length(unique(na.omit(col))) < 7L & is.numeric(col))
+df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
+
+# Extract numerical variables 
+df_num <- df[which(sapply(df, is.numeric) == 1L)]
+
+# Extract approximate continuous variables and non-continuous var
+if (ncol(df_num)>0){
+
+  rateunique_df <- sapply(df_num, function(col) continuous(col))
+  cols_continuous <- names(which(rateunique_df == TRUE))
+  df_cont <- df_num[,rateunique_df,drop=FALSE] # numeric, continuous resp. assumption fulfilled 
+  df_noncont <- df_num[,!rateunique_df,drop=FALSE] # numeric, non-continuous 
+  
+} 
+
+# Extract character variables 
+df_factor <- df[which(sapply(df, is.character) == 1L)]
+
+# Categorical 
+if (exists("df_noncont")){
+  df_cat <- merge(df_factor, df_noncont, by="row.names")
+  df_cat$Row.names <- NULL
+  df_cat$Row.names.y <- NULL
+} else {
+  df_cat <- df_factor
+}
+
+# Initialize next computations
+eval <- TRUE
+
+}, error=function(e) {
+  
+  stop(safeError("Dataset cannot be prepared. Please check the data for consistency."))
+  
+}
+
+)
+```
+
+
+```{r, results="asis", eval=FALSE}
+# Chunk with first page of basic information
+
+cat("\n# Basic Information", fill=TRUE)
+cat("\\small ", fill=TRUE)
+cat("Automatic statistics for the file:", fill=TRUE)
+dataname <- params$filename[1]
+kable(dataname, col.names = "File", linesep = '', longtable=T) 
+
+cat("Your selection for the encoding:", fill=TRUE)
+if (params$fencoding=="unknown"){
+  cat("Auto")
+} else {cat("UTF-8")}
+cat("\\newline",fill=TRUE) 
+
+cat("Your selection for the decimal character:", fill=TRUE)
+if (params$decimal=="auto"){
+  cat("Auto")
+} else {cat(params$decimal)}
+cat("\\newline",fill=TRUE) 
+  
+cat("Observations (rows with at least one non-missing value): ", fill=TRUE)
+cat(dim(df)[1])
+cat("\\newline",fill=TRUE) 
+
+# Missing rows
+if (exists("length_non_complete")){
+  cat("Number of rows that are dropped because they contain no values (all values are missing):", length_non_complete)
+  cat("\\newline",fill=TRUE) 
+}
+
+cat("Variables (columns with at least one non-missing value): ", fill=TRUE)
+cat(dim(df_list)[2])
+cat("\\newline",fill=TRUE) 
+
+
+# Missing columns
+if (exists("col_names_missing")){
+  if (sum(col_names_missing) != 0L){
+    cat("Number of columns that are dropped because they contain no values (all values are missing):", sum(col_names_missing), fill=TRUE)
+    cat("\\newline",fill=TRUE) 
+  } 
+}
+
+
+if (exists("df_cont")){
+  cat("Variables considered continuous: ", fill=TRUE)
+  if (ncol(df_cont)>0){
+    cat(ncol(df_cont),fill=TRUE)
+    knitr::kable(cols_continuous, col.names = "Variables considered continuous", linesep = '', longtable=T) %>%
+      kable_styling(font_size = 8, position = "center", full_width = FALSE, latex_options = c("HOLD_position","repeat_header"))
+  } else {
+    cat("0", fill=TRUE)
+    cat("\\newline",fill=TRUE) 
+  }
+}
+
+
+if (exists("df_cat")){
+  cat("Variables considered categorical: ", fill=TRUE)
+  if (ncol(df_cat)>0){
+    cat(ncol(df_cat),fill=TRUE)
+    knitr::kable(colnames(df_cat), col.names = "Variables considered categorical", linesep = '', longtable=T) %>%
+      kable_styling(font_size = 8, position = "center", full_width = FALSE, latex_options = c("HOLD_position","repeat_header"))
+  } else {
+    cat("0", fill=TRUE)
+    cat("\\newline",fill=TRUE) 
+  }
+}
+```
+
+
+```{r, results="asis", eval=FALSE}
+# Numeric falsly to char? 
+check_reading <- function(col){
+  numeric <- !is.na(as.numeric(col))
+  return(sum(numeric)/sum(!is.na(col)))
+}
+
+df_char2 <- df2[which(sapply(df2, is.character) == 1L)]
+numeric_percent <- sapply(df_char2, function(col) check_reading(col))
+
+if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
+  cat("**Warning: More than 90% of the values of these columns could be treated as numeric. Nevertheless, because of some values or the selected decimal character, the columns must be treated as discrete. Are all the values plausible? Please check the data once more before uploading! Column(s):**", names(numeric_percent[(numeric_percent>0.9)]), fill=TRUE)
+}
+
+```
+
+\pagebreak
+
+```{r, eval=eval}
+# Instead of updating the rest of the code:
+if (exists("df_cont")) df_num <- df_cont
+if (exists("df_cat")) df_factor <- df_cat
+```
+
+```{r}
+main <- import_main()
+main$df_py <- r_to_py(df_num)
+```
+
+```{python}
+print(df_py.head())
+```
+
+
+
+

@@ -1,0 +1,1029 @@
+---
+title: "Descriptive Statistics and Graphics"
+output: pdf_document
+classoption: landscape
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.width=8)
+options(warn=1, error=recover)
+
+```
+
+
+```{r}
+# Get data
+library(data.table)
+df <- fread("~/GitHub/Descriptive-statistics/Datasets/CaseData.csv", header = "auto", sep="auto", dec=".", encoding = "unknown", data.table = FALSE, na.strings = "")
+df2 <- df
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Call used libraries 
+options(warn=-1)
+library(psych)
+library(Hmisc)
+library(reshape2)
+library(ggplot2)
+library(knitr)
+library(shiny)
+library(gridExtra) #for grid.arrange
+library(PerformanceAnalytics) #for chart.ECDF
+library(car)#for qqPlot
+tryCatch({
+# Drop columns if all observations are missing 
+col_names_missing <- sapply(df, function(col) all(is.na(col)))
+df[ ,col_names_missing] <- list(NULL)
+# Drop empty rows
+rowsums <- data.frame(sapply(df,is.na))
+if (length(which(rowSums(rowsums) == dim(df)[2])) != 0L){
+  rows_drop <- (which(rowSums(rowsums) == dim(df)[2]))
+  length_non_complete <- length(which(rowSums(rowsums) == dim(df)[2]))
+  df <- df[-rows_drop, ,drop=FALSE]
+}
+# Convert logical variables to character
+col_names_logical <- sapply(df, function(col) is.logical(col))
+df[ ,col_names_logical] <- sapply(df[ ,col_names_logical], as.character)
+# Convert numerical variables with less than 6 unique values to character (missing values omitted)
+col_names_numeric <- sapply(df, function(col) length(unique(na.omit(col))) < 6L & is.numeric(col))
+df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
+# Extract numerical variables    
+df_num <- df[which(sapply(df, is.numeric) == 1L)]
+# Extract character variables 
+df_factor <- df[which(sapply(df, is.character) == 1L)]
+# Extract character variables with 2 or 3 unique values (missing values omitted)
+if (dim(df_factor)[2] != 0L) {
+  col_names_23 <- sapply(df_factor, function(col)
+    inrange(length(unique(na.omit(col))),2,3))
+  df_factor_23 <- df_factor[ ,col_names_23, drop = FALSE]
+}
+}, error=function(e) {message(e)}
+)
+options(warn=1)
+```
+
+
+# Basic Information
+
+\small
+Automatic statistics for the file:
+```{r eval=FALSE, include=FALSE, results="asis"}
+# Basic information
+dataname <- params$filename[1]
+kable(dataname, col.names = "File")
+```
+
+Observations (rows with at least one non-missing value): 
+```{r, results="asis"}
+# Basic information
+cat(dim(df)[1])
+```
+
+Variables (columns with at least one non-missing value): 
+```{r, results="asis"}
+# Basic information
+cat(dim(df)[2])
+```
+
+```{r, results="asis"}
+if (exists("df_num")){
+    cat("\n\n\\small Number of variables treated as numeric:", dim(df_num)[2])
+}
+```
+
+```{r, results="asis"}
+if (exists("df_factor")){
+  cat("\n\n\\small Number of variables treated as discrete (e.g. categorical):", dim(df_factor)[2])
+} 
+```
+
+```{r, results="asis"}
+if (exists("col_names_missing")){
+  if (sum(col_names_missing) != 0L){
+    cat("\n\n\\small Number of columns that have been deleted because they are empty (all values are missing):", sum(col_names_missing))
+  } 
+}
+```
+
+```{r, results="asis"}
+if (exists("length_non_complete")){
+  cat("\n\n\\small Number of rows that have been deleted because they are empty (all values are missing):", length_non_complete)
+}
+```
+
+```{r, results="asis"}
+# Missings more than 50%
+complete_rate <- sapply(df, function(col) 1-(sum(is.na(col)) / dim(df)[1])) 
+if (length(which(complete_rate < 0.5)) != 0L){
+  cat("**Warning: These variables have more than 50% missing values:**")
+  miss_var <- names(which(complete_rate < 0.5)) 
+  knitr::kable(miss_var, col.names = "Variable")
+}
+```
+
+
+```{r, results="asis"}
+# Numeric falsly to char? 
+options(warn=-1)
+check_reading <- function(col){
+  numeric <- !is.na(as.numeric(col))
+  return(sum(numeric)/sum(!is.na(col)))
+}
+df3 <- df2
+col_names_missing <- sapply(df3, function(col) all(is.na(col)))
+df3[ ,col_names_missing] <- list(NULL)
+df_char <- df[which(sapply(df3, is.character) == 1L)]
+numeric_percent <- sapply(df_char, function(col) check_reading(col))
+if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
+  cat("**Warning: More than 90% of the values of these columns could be treated as numeric. Nevertheless, because of some values or the selected decimal character, the columns must be treated as discrete. Are all the values plausible? Please check your data once more before uploading! Column(s):**" )
+  miss_morethan90<- names(numeric_percent[(numeric_percent>0.9)])
+  kable(miss_morethan90, col.names="Variable")
+  
+}
+```
+```{r, warning=FALSE}
+library(kableExtra)
+options(warn=1)
+```
+\pagebreak
+
+```{r, results="asis"}
+# Title 
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+    cat("# Results for Numerical Variables", fill=TRUE)
+    cat("## Descriptive Statistics", fill=TRUE)
+    cat("Variables are sorted alphabetically.", fill=TRUE)
+   
+  } 
+}
+```
+
+\small
+
+```{r}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+  # Numerical variables
+  # Descriptive statistics 
+  
+  # calculate basic statistics for each variable:
+  miss <- sapply(df_num, function(col) sum(is.na(col)))
+  complete <- sapply(df_num, function(col) (1-(sum(is.na(col)) / dim(df)[1]))*100) 
+  complete <- round(complete,3)
+  miss_complete <- data.frame(miss, complete)
+  miss_complete$Variable <- rownames(miss_complete)
+  miss_complete$ntotal <- dim(df_num)[1]
+  summary_stat <- psych::describe(df_num)
+  summary_stat$vars <- NULL
+  
+  if (dim(df_num)[2]==1L){
+    summary_stat$Variable=colnames(df_num)
+  } else {
+    summary_stat$Variable <- rownames(summary_stat)}
+  # calculate N Unique:
+  N_Unique <- data.frame(sapply(df_num, function(col) length(unique(col))))
+  # calculate CV:
+  CV <- sapply(df_num, function(col) {
+    ifelse(any(col< 0, na.rm=TRUE ), "-", round(sd(col,na.rm=TRUE)/mean(col,na.rm=TRUE),3))}) 
+  #merge statistics to one dataframe:
+  Unique_CV <- data.frame(N_Unique, CV)
+  Unique_CV$Variable <- rownames(Unique_CV) 
+  merge1 <- merge(miss_complete, Unique_CV, by="Variable")
+  merge2<- merge(merge1, summary_stat, by="Variable")
+  merge2 <- merge2[,c(1,7,2,4,3,5,8,10,13,14,12,6,9,16,17)]
+  colnames(merge2) <- c("Variable", "N Valid", "N Missing", "N Obs", "% Complete",
+                        "N Unique", "Mean", "Median", "MIN", "MAX","MAD", "CV",  "SD",
+                        "Skewness", "Kurtosis")
+  
+  csize <- min(max(nchar(merge2$Variable)),25)
+  merge2$Variable <- substr(merge2$Variable,1,csize)
+   
+  table_numeric<- kable(merge2, digits=2, row.names = FALSE, longtable=T, booktabs=T, 
+                        linesep = "") 
+  column_spec(table_numeric,c(6,7,8,9), width = "5em") %>%
+  kable_styling(font_size = 7,   latex_options = c("scale_down", "repeat_header")) 
+   
+  }
+  }
+}, error=function(e) message(e)
+)
+```
+
+\pagebreak
+```{r, results="asis"}
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+    cat("## Graphics", fill=TRUE)
+    cat("### Histograms", fill=TRUE)
+    if(dim(df_num)[2]>1){
+      cat("One Relative Frequency Histogram per page for each variable. Variables are sorted alphabetically. The blue line represents the normal density approximation. The blue dotted line represents a special kernel density approximation.  ", fill=TRUE)
+    }
+    
+ 
+  } 
+}
+```
+
+```{r, results="asis"}
+if (exists("df_num")){
+  if (dim(df_num)[2] == 1){
+    cat("## Graphics", fill=TRUE)
+    cat("### Histograms", fill=TRUE)
+    if(dim(df_num)[2]==1){
+      cat("Relative Frequency Histogram. The blue line represents the normal density approximation. The blue dotted line represents a special kernel density approximation.  ", fill=TRUE)
+    }
+  } 
+}
+```
+
+```{r, results = 'asis', dev="cairo_pdf"}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+  # Numerical variables
+  # Graphics: Histograms Large
+  # For each variable
+  df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE] 
+  #improved multi.hist-function with y label:
+ "multi.hist_optim" <-
+  function(x,freq=FALSE, ylab="Relative Frequency", bcol="white",
+           dcol=c("black","black"),  dlty=c("dashed","dotted"), main=NULL,
+           mar=c(2,4,1,1), breaks=21,...) {
+
+    # all par settings which can be changed:
+    old.par <- par(no.readonly = TRUE) 
+    par(mar=mar)
+    #draw the histogram:
+    histo.density_optim(x,ylab=ylab,main=main,freq=freq,bcol,dcol=dcol,
+                       dlty=dlty,breaks=breaks,...)
+    #set the graphic parameters back to the original:
+    on.exit(par(old.par))   
+  }
+"histo.density_optim" <- 
+  function(x,main="Histogram, Density, and Normal Fit",
+           ylab="Relative Frequency",freq=FALSE, bcol="white", 
+           dcol=c("black","black"), dlty=c("dashed","dotted"), breaks=21,...) {
+    
+    # calculate mean, density and sd for the normal density approximation:
+    h <-  hist(x,plot=FALSE,breaks=breaks)
+    m1 <- mean(x,na.rm=TRUE)
+    s1 <- sd(x,na.rm=TRUE)
+    d <- density(x,na.rm=TRUE)
+    
+    ymax <- max(h$density)
+    dmax <- max(d$y)
+    ymax <- max(ymax,dmax)
+    plot(h,freq=freq,ylim=c(0,ymax*1.2),ylab= ylab, main=main,col=bcol,...)
+    lines(d,lty=dlty[1],col=dcol[1],...)
+    curve(dnorm(x,m1,s1),add=TRUE,lty=dlty[2],col=dcol[2],...)
+    
+  }
+ for (i in 1:length(df_num_order)){ 
+   par(mar=c(2,4,1,1.5), oma= c(2,1,1,1))
+    histogram <-  hist(df_num_order[,c(i)], plot = FALSE)
+    axis_value<- pretty(c(floor(histogram$breaks[1]),
+                          ceiling(last(histogram$breaks))))
+    names(df_num_order[,i]) <- colnames(df_num_order[,i])
+    {multi.hist_optim(df_num_order[,i], dcol=c("#396e9f","#396e9f"), 
+                bcol= "#2fa42d", 
+               dlty=c("dotted", "solid"), 
+               main = paste("Histogram of", colnames(df_num_order[i])),
+               xlim=c(min(axis_value), max(axis_value)),
+               ylab="Relative Frequency"
+    )
+  
+           }
+    cat("\n\n\\pagebreak\n")
+  }
+  }
+}}, error=function(e) message(e)
+)
+```
+
+```{r, results="asis"}
+# Title
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  cat("### Histograms Summary", fill = TRUE)
+  cat("Multiple Relative Frequency Histogram in one figure. Variables are sorted alphabetically. The blue line represents the normal density approximation. The blue dotted line represents a special kernel density approximation.  ", fill=TRUE)
+  } 
+}
+```
+
+```{r, dev="cairo_pdf", fig.width=9}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  # Numerical variables
+  # Graphics: Histogram Summary
+  # All
+    par(mar=c(1.5,1,2,1.5), oma= c(1,1,1,1))
+ df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE] 
+ k <- ceiling(dim(df_num)[2]/20)-1
+  for (i in 0:k){
+    m <- 20*i+1
+    n <- min(20*(i+1),dim(df_num)[2])
+    multi.hist(df_num_order[,m:n], dcol=c("#396e9f","#396e9f"), 
+               bcol= "#2fa42d", 
+               dlty=c("dotted", "solid"), 
+               main = colnames(df_num_order[,m:n])) 
+  }
+  }
+} 
+}, error=function(e) message(e))
+
+```
+
+\pagebreak
+
+```{r, results="asis"}
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+    cat("### Box-Plots", fill=TRUE)
+    if(dim(df_num)[2]>1){
+      cat("One Box-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    }
+  } 
+}
+
+```
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=6}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+  # Numerical variables
+  # Graphics: Boxplot Large 
+  # For each variable
+  df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE]  
+  for (i in 1:length(df_num_order)){
+    boxplot(df_num_order[,c(i)], col = "#2fa42d", 
+         main = paste("Boxplot of",colnames(df_num_order[i])),
+         xlab=paste(colnames(df_num_order[i])), horizontal = TRUE)
+    cat("\n\n\\pagebreak\n")
+  }
+  }
+} 
+}, error=function(e) message(e)
+)
+```
+
+\pagebreak
+
+```{r, results="asis"}
+# Title
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  cat("### Box-Plots Summary", fill=TRUE)
+  cat("Multiple Box-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=5}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  # Numerical variables
+  # Graphics: Box-Plots Summary
+  # For each variable
+  df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE]  
+  boxplot_fct<-function(i){
+    boxplot(df_num_order[,c(i)], col = "#2fa42d", 
+         main = colnames(df_num_order[i]),
+         xlab=paste(colnames(df_num_order[i])),xaxt="n",
+         horizontal = TRUE)
+  }
+  # if more than 25 variables: split plots over several pages, 
+  # else: all plots on one page
+   if(length(df_num_order)>25){
+     par(mfrow=c(5,5),mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+     for(i in 1:25){
+       boxplot_fct(i)
+     }
+     for(i in 26:length(df_num_order)){
+       
+       if(isTRUE(round((i-1)/25)==(i-1)/25)){ 
+         cat("\n\n\\pagebreak\n")
+         par(mfrow=c(5,5),mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+       }
+       boxplot_fct(i)
+     }
+  }else{ 
+    par(mfrow=c(ceiling(sqrt(length(df_num_order))),
+                ceiling(sqrt(length(df_num_order)))),
+        mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+    for(i in 1:length(df_num_order)){
+      boxplot_fct(i)
+    }
+  }
+  }
+  }
+}, error=function(e) message(e)
+)
+```
+
+\pagebreak
+```{r, results="asis"}
+if (exists("df_num")){
+  if (dim(df_num)[2]==1){
+    cat("### ECDF Plots", fill=TRUE)
+    if(dim(df_num)[2]==1){
+       cat("ECDF (Empirical Cumulative Distribution Function) Plot.  The blue line represents the CDF of a normal distribution. If the variable is normally distributed, the blue line approximates well the ECDF.  ", fill=TRUE)
+    }
+  } 
+}
+```
+```{r, results="asis"}
+if (exists("df_num")){
+  if (dim(df_num)[2]>1){
+    cat("### ECDF Plots", fill=TRUE)
+    if(dim(df_num)[2]>1){
+       cat(" One ECDF (Empirical Cumulative Distribution Function) Plot per page for each variable. Variables are sorted alphabetically. The blue line represents the CDF of a normal distribution. If the variable is normally distributed, the blue line approximates well the ECDF.  ", fill=TRUE)
+    }
+  } 
+}
+```
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=5}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+  # Numerical variables
+  # Graphics: ECDF Plots Large
+  # For each variable
+  df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE]  
+  for (i in 1:length(df_num_order)){
+    data<-as.data.frame(df_num_order[,c(i)])
+    colnames(data)<-"variable"
+
+    # plot empirical cdf:
+    step_function <-ecdf(data$variable)
+    plot(step_function,
+        main=paste("ECDF Plot of", colnames(df_num_order[i])),
+        xlab=colnames(df_num_order[i]), ylab="ECDF",
+        cex=0.7, col="#2fa42d", do.points=TRUE)
+    # plot a cdf of normal distribution: 
+    data_mean<- mean(data$variable, na.rm=TRUE)
+    data_sd<- sd(data$variable, na.rm=TRUE)
+    curve(pnorm(x, data_mean,data_sd),
+          from=qnorm(0.0001, mean=data_mean, sd=data_sd), 
+          to=qnorm(0.9999, mean=data_mean, sd=data_sd), 
+          add=TRUE, col="#396e9f", lwd=2)
+
+    cat("\n\n\\pagebreak\n")
+  }
+} 
+}
+  }, error=function(e) message(e)
+)
+```
+
+```{r, results="asis"}
+# Title
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  cat("### ECDF Plots Summary", fill=TRUE)
+  cat("Multiple ECDF Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=6}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  # Numerical variables
+  # Graphics: ECDF Plots Summary
+  # For each variable
+  df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE]  
+  
+  ecdf_plot<- function(i){
+     data<-as.data.frame(df_num_order[,c(i)])
+    colnames(data)<-"variable"
+    
+    # plot empirical cdf:
+    step_function<- ecdf(data$variable)
+    ecdf_plot<-plot(step_function, 
+        main= colnames(df_num_order[i]),
+        xlab=colnames(df_num_order[i]), ylab="ECDF",
+        cex=0.7,col="#2fa42d", do.points=FALSE)
+     # plot a cdf of normal distribution: 
+    data_mean<- mean(data$variable, na.rm=TRUE)
+    data_sd<- sd(data$variable, na.rm=TRUE)
+    curve(pnorm(x, data_mean,data_sd),
+          from=qnorm(0.0001, mean=data_mean, sd=data_sd), 
+          to=qnorm(0.9999, mean=data_mean, sd=data_sd), 
+          add=TRUE, col="#396e9f", lwd=0.5,pch=1)
+  }
+  
+    # if more than 25 variables: split plots over several pages, 
+    # else: all plots on one page
+   if(length(df_num_order)>25){
+     par(mfrow=c(5,5),mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+     for(i in 1:25){
+       ecdf_plot(i)
+     }
+     for(i in 26:length(df_num_order)){
+       if(isTRUE(round((i-1)/25)==(i-1)/25)){ 
+         cat("\n\n\\pagebreak\n")
+         par(mfrow=c(5,5),mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+       }
+       ecdf_plot(i)
+     }
+  }else{
+    par(mfrow=c(ceiling(sqrt(length(df_num_order))),
+                ceiling(sqrt(length(df_num_order)))),
+        mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+    for(i in 1:length(df_num_order)){
+      ecdf_plot(i)
+    }
+  }
+} 
+}
+},  error=function(e) message(e)
+)
+```
+
+```{r, results="asis"}
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+    cat("### Q-Q-Plots", fill=TRUE)
+    if(dim(df_num)[2]>1){
+      cat("One Q-Q-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    }
+  } 
+}
+```
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=6}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+  # Numerical variables
+  # Graphics: Q-Q-Plot Large 
+  # For each variable
+  df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE]  
+  for (i in 1:length(df_num_order)){
+     data<-as.data.frame(df_num_order[,c(i)])
+    colnames(data)<-"variable"
+    qqPlot(data$variable, ylab=colnames(df_num_order)[c(i)], 
+           main=paste("Q-Q-Plot of",colnames(df_num_order[i])),
+           xlab="Normal Quantiles",grid = FALSE,
+           col="#2fa42d", col.lines="#396e9f", envelope = FALSE, id=FALSE,
+           cex=0.7, pch=19)
+ 
+  }
+    
+    cat("\n\n\\pagebreak\n")
+  }
+  }
+}, error=function(e) message(e)
+)
+```
+
+\pagebreak
+
+```{r, results="asis"}
+# Title
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  cat("### Q-Q-Plots Summary", fill=TRUE)
+  cat("Multiple Q-Q-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=6}
+tryCatch({
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  # Numerical variables
+  # Graphics: ECDF Plots Summary
+  # For each variable
+  df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE]  
+  
+  qq_plot<- function(i){
+     data<-as.data.frame(df_num_order[,c(i)])
+    colnames(data)<-"variable"
+    qqPlot(data$variable, ylab=colnames(df_num_order)[c(i)], 
+           main=colnames(df_num_order[c(i)]),
+           col="#2fa42d", col.lines="#396e9f", envelope = FALSE,grid=FALSE,
+           id=FALSE,cex=0.7, lwd=1, pch="-")
+ 
+  }
+  # if more than 25 variables: split plots over several pages, 
+  # else: all plots on one page
+   if(length(df_num_order)>25){
+     par(mfrow=c(5,5),mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+     for(i in 1:25){
+       qq_plot(i)
+     }
+     for(i in 26:length(df_num_order)){
+       #after 25 variables: new page
+       if(isTRUE(round((i-1)/25)==(i-1)/25)){ 
+         cat("\n\n\\pagebreak\n")
+         par(mfrow=c(5,5),mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+       }
+       qq_plot(i)
+     }
+  }else{
+    par(mfrow=c(ceiling(sqrt(length(df_num_order))),
+                ceiling(sqrt(length(df_num_order)))),
+        mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+    for(i in 1:length(df_num_order)){
+      qq_plot(i)
+    }
+  }
+} 
+}
+},  error=function(e) message(e)
+)
+
+```
+
+\pagebreak
+
+```{r, results="asis"}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+    cat("# Results for Discrete Variables", fill=TRUE)
+    cat("## Descriptive Statistics", fill=TRUE)
+    cat("### Totals", fill = TRUE)
+   } 
+}
+```
+
+\small
+
+```{r, results="asis"}
+# Title 
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+    cat("Variables are sorted alphabetically.", fill=TRUE)
+   
+  } 
+}
+```
+```{r}
+tryCatch({
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+  # Discrete variables
+  # Descriptive statistics 
+  # Totals
+    
+  # calculate individual statistics:
+  miss <- sapply(df_factor, function(col) sum(is.na(col)))
+  complete <- sapply(df_factor, function(col) (1-(sum(is.na(col)) / dim(df)[1]))*100) 
+  complete <- round(complete,3)
+  miss_complete <- data.frame(miss, complete)
+  miss_complete$Variable <- rownames(miss_complete)
+  miss_complete$ntotal <- dim(df_factor)[1]
+  miss_complete$valid <- miss_complete$ntotal-miss_complete$miss
+  N_Unique <- data.frame(sapply(df_factor, function(col)
+    length(unique(col))))
+  N_Unique$Variable <- rownames(N_Unique)
+  
+  # merge statistics to one dataframe:
+  merge1<- merge(miss_complete, N_Unique, by="Variable")
+  merge2 <- merge1[,c(1,5,2,4,3,6)]
+  colnames(merge2) <- c("Variable", "N Valid", "N Missing", "N Obs", "% Complete","N Unique")
+  csize <- min(max(nchar(merge2$Variable)),25)
+  merge2$Variable <- substr(merge2$Variable,1,csize)
+  
+  kable(merge2, digits=2, row.names = FALSE, longtable=T, booktabs=T, linesep = "") 
+  
+  }
+  }
+}, error=function(e) message(e)
+)
+```
+\pagebreak
+
+```{r, results="asis"}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+    cat("### Frequencies", fill = TRUE)
+   } 
+}
+```
+
+```{r, results="asis"}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+    cat("The table is sorted by the variable name. For each variable, a maximum of 20 unique values are considered, sorted in decreasing order of their frequency.")
+  } 
+}
+```
+```{r}
+tryCatch({
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+  # Discrete variables
+  # Descriptive statistics
+  # Frequencies
+  discrete <- function(i){
+    
+    #calculate individual statistics:
+    count_a <- table(df_factor[,i], useNA="always")
+    count <- as.data.frame(count_a)
+    perc <- as.data.frame(prop.table(count_a))
+    perc$Percent <- perc$Freq*100 
+    perc$Freq <- NULL
+    
+    # merge to one dataframe:
+    v1 <- merge(count, perc, by="Var1")
+    v1$Variable <- rep(colnames(df_factor)[i],dim(v1)[1])
+    v2 <- v1[,c(4,1,2,3)]
+    colnames(v2) <- c("Variable", "Category","Frequency", "Percent")
+    
+    if(length(is.na(v2$values))>0){
+      levels(v2$Values) <- c(levels(v2$Values),"Missing")
+      v2$Values[is.na(v2$Values)] <- "Missing"
+    }
+    
+    v2_order <- v2[order(-v2[,4],v2[,2]),]
+    min <- min(20, length(unique(df_factor[,i])))
+    
+    # add category "All other values" in case of more than 20 categories:
+    if(min==20){
+      v2_order$Category <- as.character(v2_order$Category)
+      v3 <-rbind(v2_order[1:20,],c(colnames(df_factor)[i], 
+                                   as.character("****All Other Values****"),
+                                  sum(v2_order$Frequency[-c(1:20)]), 
+                                  sum(v2_order$Percent[-c(1:20)])))
+    }else{
+      v3 <- v2_order[1:min,]
+    }
+    return(v3)
+  }
+  
+  # merge individual variable frequency tables to one table:
+  cat_table <- discrete(1)
+  for (i in 1:dim(df_factor)[2]){
+    if (i>1){
+      cat_i <- discrete(i)
+      cat_table <- rbind(cat_table, cat_i)
+    }
+  }
+  
+ cat_table <- cat_table[order(cat_table$Variable),]
+ cat_table$Percent<- round(as.numeric(cat_table$Percent),2)
+longest_category<-paste(max(c(apply(as.data.frame(cat_table$Category),1,
+                                    nchar),8), na.rm=TRUE) *0.15,"cm")
+  
+ kable(cat_table, digits=2, row.names = FALSE, longtable=T, booktabs=T, linesep = "") %>%
+   column_spec(2, width =longest_category)%>% 
+   kable_styling(font_size = 7,   latex_options = c("scale_down", "repeat_header"), full_width = F)
+
+  } 
+}
+}, error=function(e) message(e)
+)
+```
+
+\pagebreak
+
+```{r, results="asis"}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+  cat("## Graphics", fill=TRUE)
+  cat("### Bar-Plots", fill=TRUE)
+  if(dim(df_factor)[2]>1){
+    cat("One Bar-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+  }
+  } 
+}
+```
+\small
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=6}
+tryCatch({
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+  # Discrete variables
+  # Graphics: Barplots Large
+  df_factor_order <- df_factor[,order(colnames(df_factor)),drop=FALSE]  
+  for (i in 1:dim(df_factor)[2]){
+    counts <- table(df_factor_order[i], useNA = "ifany")
+    names(counts)[is.na(names(counts))] <- "Missing"
+    names(counts)[names(counts)=="NA"] <- "Missing"
+     if(any(nchar(names(counts), type = "chars")>=11) | dim(counts)>12){
+       # Barplot with suppressed category names if too many:
+       if(length(names(counts))>40){
+          par(mar = c(6,6,4.1, 2.1),mgp = c(3, 1, 0))
+          barplot(counts, col = "#2fa42d", main = paste("Barplot of ", 
+                                    colnames(df_factor_order[i])),xaxt="n",
+                  ylab = "Frequency", cex.names = 0.6, las=2, 
+                  xlab= colnames(df_factor_order[i]),
+                  ylim=range(pretty(c(0,counts))))
+          cat("More than 40 categories. Category labels are not displayed.  ", fill=TRUE)
+       }else{
+          par(mar = c(8, 8, 4.1, 2.1), mgp = c(6, 1, 0))
+         # Barplot with shortened category names if naes are too long: 
+           names(counts) <- substr(names(counts), 1, 15)
+           barplot(counts, col = "#2fa42d", main = paste("Barplot of ",
+                                            colnames(df_factor_order[i])),
+                 ylab = "Frequency", cex.names = 0.65,
+                 xlab= colnames(df_factor_order[i]),
+                 las=2,
+                 ylim=range(pretty(c(0,counts))))
+       }
+     
+     }else{
+       # Barplot with full-length names:
+        par(mar = c(6,6, 4.1, 2.1), mgp = c(5, 1, 0))
+        barplot(counts, col = "#2fa42d", main = paste("Barplot of ",
+                                              colnames(df_factor_order[i])),
+                ylab = "Frequency", 
+                cex.names = 0.7,ylim=range(pretty(c(0,counts))),
+                xlab= colnames(df_factor_order[i]))
+     }
+  }
+}} 
+}, error=function(e) message(e)
+)
+```
+
+```{r, results="asis", dev="cairo_pdf"}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] >1){
+  cat("### Bar-Plots Summary")
+  cat("\n\n\ Multiple Bar-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=6}
+tryCatch({
+if (exists("df_factor")){
+  if (dim(df_factor)[2] >1){
+  # Numerical variables
+  # Graphics: Barplots Summary
+  # For each variable
+  df_factor_order <- df_factor[,order(colnames(df_factor)),drop=FALSE]  
+  plot_bar<-function(i){
+    counts <- table(df_factor_order[i], useNA = "ifany")
+    names(counts)[is.na(names(counts))] <- "Missing"
+    names(counts)[names(counts)=="NA"] <- "Missing"
+    barplot(counts, col = "#2fa42d", main = colnames(df_factor_order[i]),
+            ylab = "Frequency",  xaxt="n",ylim=range(pretty(c(0,counts))),
+            cex.main=ceiling(sqrt(length(df_factor_order)))*
+              (-min(5,ceiling(sqrt(length(df_factor_order))))/12 + 0.5667))
+  }
+  # if more than 25 variables: split plots over several pages, 
+  # else: all plots on one page
+  if(length(df_factor_order)>25){
+     par(mfrow=c(5,5),mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+     for(i in 1:25){
+       plot_bar(i)
+     }
+     for(i in 26:length(df_factor_order)){
+       #after 25 variables: new page
+       if(isTRUE(round((i-1)/25)==(i-1)/25)){ 
+         cat("\n\n\\pagebreak\n")
+         par(mfrow=c(5,5),mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+       }
+       plot_bar(i)
+     }
+  }else{
+    par(mfrow=c(ceiling(sqrt(length(df_factor_order))),
+                ceiling(sqrt(length(df_factor_order)))),
+        mar=c(1.5,1,2,1), oma= c(1,1,1,1))
+    for(i in 1:length(df_factor_order)){
+      plot_bar(i)
+    }
+  }
+  }
+} 
+}, error=function(e) message(e)
+)
+```
+
+```{r, results="asis"}
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+    cat("### Pie Plots", fill=TRUE)
+    if(dim(df_factor)[2]>1){
+      cat("One Pie Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    }
+    
+  } 
+}
+```
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=7}
+tryCatch({
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+  # Numerical variables
+  # Graphics: Pie Plot Large 
+  # For each variable
+  df_factor_order <- df_factor[,order(colnames(df_factor)),drop=FALSE]  
+  for (i in 1:length(df_factor_order)){
+    #create table with Frequencies:
+     pie_table_unsorted<- as.data.frame(table(df_factor[,order(colnames(df_factor)),
+                                               drop=FALSE][,c(i)],
+                                              useNA = "ifany")) 
+     pie_table_sorted<- pie_table_unsorted[order(pie_table_unsorted$Freq, decreasing=TRUE),]
+    colnames(pie_table_sorted)<-c("Category", "Frequency")
+     # if more than 20 categories: summarize the smallest categories to one category:
+     if(dim(pie_table_sorted)[1]>20){
+       pie_table_sorted$Category<- as.character(pie_table_sorted$Category)
+       pie_table_summarized <-rbind(pie_table_sorted[c(1:20),],
+                                   c(as.character("All Other Values"), 
+                                     sum(pie_table_sorted$Frequency[-c(1:20)])))
+       pie_table_sorted<-pie_table_summarized
+     }
+    
+    # Pie Plot via ggPlot:
+     plot<- ggplot(pie_table_sorted, aes(x="",y=Frequency, fill=Category))+
+      geom_bar(width=1,stat="identity", colour="black")+
+      coord_polar("y", start=0)+
+      theme( axis.title.x = element_blank(), axis.title.y = element_blank(), 
+              axis.text.x = element_blank(),
+               panel.grid = element_blank(),
+              axis.ticks=element_blank())+
+      ggtitle(paste("Pie Chart of ", colnames(df_factor_order[i])))+
+      theme(plot.title = element_text(hjust = 0.5, face="bold"), 
+             panel.background = element_blank())
+     print(plot)
+    cat("\n\n\\pagebreak\n")
+  }
+  }
+} 
+}, error=function(e) message(e)
+)
+```
+
+```{r, results="asis"}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] >1){
+  cat("### Pie Plots Summary", fill=TRUE)
+  cat("Multiple Pie Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+```{r, results = 'asis', dev="cairo_pdf", fig.width = 10, fig.height=6}
+tryCatch({
+if (exists("df_factor")){
+  if (dim(df_factor)[2] >1){
+  # Discrete variables
+  # Graphics: Pie Plots Summary
+  # For each variable
+  df_factor_order <- df_factor[,order(colnames(df_factor)),drop=FALSE]  
+  plots<-list()
+  # Create Pie plot-function via ggplot:
+   plot_pie<- function(pie_table_sorted){
+      plot<- ggplot(pie_table_sorted, aes(x="",y=Frequency, fill=Category))+
+       ggtitle( substr(colnames(df_factor_order[i]),1,19))+
+       theme(plot.title = element_text(hjust = 0.5))+
+       geom_bar(width=1,stat="identity",  colour="black")+
+       coord_polar("y", start=0)+
+       theme( axis.title.x = element_blank(), axis.title.y = element_blank(),
+             axis.ticks = element_blank(), panel.grid = element_blank(),
+             axis.text = element_blank(), 
+             plot.title = element_text(size = 30/min(25,ceiling(sqrt(length(df_factor_order)))),
+                                       face="bold"),
+             legend.position="none",
+             panel.background = element_blank())
+      return(plot)}
+      
+  for (i in 1:length(df_factor_order)){
+     # Create table with Frequencies:
+     pie_table_unsorted<- as.data.frame(table(df_factor[,order(colnames(df_factor)),
+                                               drop=FALSE][,c(i)],useNA = "ifany")) 
+     pie_table_sorted<- pie_table_unsorted[order(pie_table_unsorted$Freq, decreasing=TRUE),]
+     colnames(pie_table_sorted)<-c("Category", "Frequency")
+     
+     # if more than 20 categories: summarize the smallest categories to one category:
+     if(dim(pie_table_sorted)[1]>20){
+       pie_table_sorted$Category<- as.character(pie_table_sorted$Category)
+       pie_table_summarized <-rbind(pie_table_sorted[c(1:20),],
+                                   c(as.character("All Other Values"), 
+                                     sum(pie_table_sorted$Frequency[-c(1:20)])))
+       pie_table_sorted<-pie_table_summarized
+     }
+     plots[[i]]<- plot_pie(pie_table_sorted)
+  }
+
+  # if more than 25 variables: split plots over several pages, 
+  # else: all plots on one page
+  if(length(df_factor_order)>25){
+     for(i in 1:ceiling(length(df_factor_order)/25)){
+       index<- seq((i-1)*25+1,min(i*25,length(df_factor_order)),by=1)
+       plots_2<- plots[index]
+       grid.arrange(grobs=plots_2, ncol=5)
+     }
+  }else{
+   grid.arrange(grobs=plots, ncol=ceiling(sqrt(length(df_factor_order))))
+  }
+} 
+}
+},  error=function(e) message(e)
+)
+```
