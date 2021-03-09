@@ -7,10 +7,12 @@ title: "Descriptive Statistics and Graphics"
 library(reticulate)
 virtualenv_create('shiny-app-env', python= 'python3')
 use_virtualenv('shiny-app-env', required = T)
+virtualenv_install('shiny-app-env', packages = c('seaborn'))
+virtualenv_install('shiny-app-env', packages = c('scipy'))
 ```
 
 
-```{r}
+```{r, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 library(knitr) # kable
 
 # Get data
@@ -42,7 +44,7 @@ if (length(setdiff(params$vars1,colnames(df))) >0) {
 ```
 
 
-```{r, eval=eval0}
+```{r, eval=eval0, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Call used libraries 
 library(psych)
 library(Hmisc)
@@ -119,7 +121,7 @@ eval <- TRUE
 ```
 
 
-```{r, results="asis", eval=FALSE}
+```{r, results="asis", eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Chunk with first page of basic information
 
 cat("\n# Basic Information", fill=TRUE)
@@ -191,7 +193,7 @@ if (exists("df_cat")){
 ```
 
 
-```{r, results="asis", eval=FALSE}
+```{r, results="asis", eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Numeric falsly to char? 
 check_reading <- function(col){
   numeric <- !is.na(as.numeric(col))
@@ -209,19 +211,59 @@ if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
 
 \pagebreak
 
-```{r, eval=eval}
+```{r, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Instead of updating the rest of the code:
 if (exists("df_cont")) df_num <- df_cont
 if (exists("df_cat")) df_factor <- df_cat
 ```
 
-```{r}
+```{r, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 main <- import_main()
-main$df_py <- r_to_py(df_num)
+main$df_num <- r_to_py(df_num)
 ```
 
-```{python}
-print(df_py.head())
+```{python, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib as plt 
+from scipy import stats   
+
+# Set console printing options 
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 20)
+pd.set_option('display.width', 1000)
+
+
+# Continuous variables
+## Descriptive statistics
+df_num_stats = df_num.describe()
+df_num_stats = df_num_stats.transpose()
+df_num_stats.rename(columns={"count": "N Obs", "mean": "Mean", "50%": "Median", 
+                             "std": "SD", "min": "Min", "max": "Max"}, inplace=True)
+df_num_stats["N Obs"] = df_num_stats["N Obs"].astype('int64') 
+df_num_stats.drop(columns=['25%', '75%'], inplace=True)
+df_num_stats["N Missing"] = df_num.isna().sum()
+df_num_stats["N Valid"] = (df_num_stats["N Obs"] - df_num_stats["N Missing"])
+df_num_stats["% Complete"] = (df_num_stats["N Valid"] / df_num_stats["N Obs"])*100
+df_num_stats["N Unique"] = df_num.nunique()
+df_num_stats["MAD"] = df_num.mad(axis=0)
+df_num_stats["Skewness"] = df_num.skew(axis=0)
+df_num_stats["Kurtosis"] = df_num.kurtosis(axis=0)
+df_num_stats.loc[df_num_stats["Min"]>0,"CV"] = df_num_stats["SD"] / df_num_stats["Mean"]
+df_num_stats = df_num_stats.round(2)
+
+### Reorder columns to be similar to the output of the R app 
+df_num_stats = df_num_stats.reindex(columns=["N Obs", "N Missing", "N Valid", 
+                                             "% Complete", "N Unique", "Mean", 
+                                             "SD", "Median", "MAD", "Min", "Max", 
+                                             "Skewness", "Kurtosis", "CV"]) 
+
+### Order by variable name
+df_num_stats.sort_index(inplace=True)
+
+### Output
+df_num_stats
 ```
 
 
