@@ -1,5 +1,5 @@
 ---
-title: "Descriptive Statistics"
+title: "Exploratory Data Analysis"
 author: "Statsomat.com"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:

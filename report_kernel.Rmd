@@ -21,6 +21,9 @@ df_code <- df
 
 # Initialize further chunks
 eval0 <- FALSE
+eval <- FALSE
+eval_num <- FALSE
+eval_num2 <- FALSE
 
 tryCatch({
   
@@ -235,6 +238,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt 
 from scipy import stats 
+import math
 
 # Set console printing options 
 pd.set_option('display.max_rows', 500)
@@ -282,11 +286,14 @@ if (exists("df_num")){
     cat("## Graphics", fill=TRUE)
     cat("### Histograms", fill=TRUE)
     if(dim(df_num)[2]> 1){
-      cat("One Density Histogram per page for each variable. Variables are sorted alphabetically. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
+      cat("Details: Density Histograms. One large figure per page for each variable. Variables are sorted alphabetically. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
+      cat("\\newline", fill=TRUE)
+      cat("See figures on next page. ", fill=TRUE)
     }
   } 
 }
 ```
+
 
 ```{r, results="asis", eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 if (exists("df_num")){
@@ -295,7 +302,9 @@ if (exists("df_num")){
     cat("### Histograms", fill=TRUE)
     eval_num <- TRUE
     if(dim(df_num)[2]==1){
-      cat("Density Histogram. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
+      cat("Details: Density Histogram. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
+      cat("\\newline", fill=TRUE)
+      cat("Plot on next page. ", fill=TRUE)
     }
   } 
 }
@@ -303,21 +312,88 @@ if (exists("df_num")){
 
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 ## Histograms Large
-def histo(ax, var):
+def histo(ax, var, ylabel, xsize):
     sns.histplot(df_num.iloc[:,var], ax = ax, stat='density', 
                  color = '#2fa42d', kde = True, 
                  bins = len(np.unique(df_num.iloc[:,var]))//2)
     xaxis = np.arange(min(df_num.iloc[:,var]), max(df_num.iloc[:,var]), 0.001)
     fit_normal = stats.norm.pdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
     ax.plot(xaxis, fit_normal, 'r', lw = 1, color = '#396e9f')
-    ax.set_xlabel(df_num.columns[var], fontsize=25)
+    ax.tick_params(axis='both', which='major', labelsize=10)
+    ax.set_xlabel(df_num.columns[var], fontsize=xsize)
+    ax.set_ylabel(ylabel)
 
 
 for var in range(df_num.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
-  histo(ax, var)
+  histo(ax, var, "Density", 25)
   plt.show()
+  if (var==0):
+    plt.plot()
+```
+
+\pagebreak
+
+```{r, results="asis", eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+    eval_num2 <- TRUE
+    cat("### Histograms Summary", fill = TRUE)
+    cat("Multiple Relative Frequency Histogram in one figure. Variables are sorted alphabetically. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
+  } 
+}
 ```
 
 
+```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## Histograms Summary (works for ncols <=25)
 
+### Little helper to message the axs list to have correct length
+def trim_axs(axs, N):
+    axs = axs.flat
+    for ax in axs[N:]:
+        ax.remove()
+    return axs[:N]
+
+### Define number of columns and rows for the multi-plot 
+nrow = math.ceil(np.sqrt(df_num.shape[1]))
+ncol = math.ceil(df_num.shape[1] / nrow)
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_num.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
+   histo(ax, var, "", 8)
+plt.show()
+```
+
+\pagebreak
+
+```{r, results="asis", eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+    cat("### Box-Plots", fill=TRUE)
+    if(dim(df_num)[2]>1){
+      cat("One Box-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    }
+  } 
+}
+
+```
+
+
+```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## Box-Plots Large
+def box(ax, var, xsize):
+    sns.boxplot(df_num.iloc[:,var], ax = ax, color = '#2fa42d')
+    ax.set_xlabel(df_num.columns[var], fontsize=xsize)
+
+sns.set_theme(style="whitegrid")
+for var in range(df_num.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  box(ax, var, 25)
+  plt.show()
+  if (var==0):
+    plt.plot()
+```

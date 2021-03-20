@@ -204,7 +204,7 @@ function(input, output, session) {
     }
     
     
-    if (length(input$selection1$right) > 10 ){
+    if (length(input$selection1$right) > 25 ){
       showNotification("Maximum number of columns exceeded. For more contact: support@statsomat.com", duration=30)
       Sys.sleep(5)
       session$close()
