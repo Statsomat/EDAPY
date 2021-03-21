@@ -239,6 +239,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt 
 from scipy import stats 
 import math
+import statsmodels.api as sm
 
 # Set console printing options 
 pd.set_option('display.max_rows', 500)
@@ -496,4 +497,66 @@ for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
 plt.show()
 ```
 
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+if (exists("df_num")){
+  if (dim(df_num)[2]==1){
+    cat("### Q-Q-Plots", fill=TRUE)
+  } else if (dim(df_num)[2]>1){
+    cat("### Q-Q-Plots", fill=TRUE)
+    cat("One Q-Q-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    cat("\\newline", fill=TRUE)
+    cat("See figures on next page. ", fill=TRUE)
+  }
+}
+```
+
+
+
+```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## QQ Large
+def qqplot(var, ax):
+    sm.qqplot(df_num.iloc[:,var], ax = ax, 
+              line = "q", 
+              marker='.', markerfacecolor='#2fa42d', 
+              markeredgecolor='#2fa42d', alpha=0.9)
+    ax.set_xlabel("Normal Quantiles")
+    ax.set_ylabel("Sample Quantiles for " + df_num.columns[var]) 
+    
+for var in range(df_num.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  qqplot(var, ax)
+  plt.show()
+  if (var==0):
+    plt.plot()
+```
+
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  cat("### Q-Q-Plots Summary", fill=TRUE)
+  cat("Multiple Q-Q-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+
+```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## QQ Plots Summary (tested for ncols <=25)
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_num.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
+    qqplot(var, ax)
+plt.show()
+```
 
