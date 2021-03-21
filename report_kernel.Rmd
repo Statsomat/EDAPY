@@ -1,5 +1,5 @@
 ---
-title: "Descriptive Statistics and Graphics"
+title: "Exploratory Data Analysis I"
 ---
 
 
@@ -304,7 +304,7 @@ if (exists("df_num")){
     if(dim(df_num)[2]==1){
       cat("Details: Density Histogram. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
       cat("\\newline", fill=TRUE)
-      cat("Plot on next page. ", fill=TRUE)
+      cat("Figure on next page. ", fill=TRUE)
     }
   } 
 }
@@ -322,8 +322,10 @@ def histo(ax, var, ylabel, xsize):
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
     ax.set_ylabel(ylabel)
+    title = "Histogram of " + str(df_num.columns[var])
+    ax.set_title(title)
 
-
+sns.set_style()
 for var in range(df_num.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
   histo(ax, var, "Density", 25)
@@ -347,7 +349,7 @@ if (exists("df_num")){
 
 
 ```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
-## Histograms Summary (works for ncols <=25)
+## Histograms Summary (tested for ncols <=25)
 
 ### Little helper to message the axs list to have correct length
 def trim_axs(axs, N):
@@ -376,6 +378,8 @@ if (exists("df_num")){
     cat("### Box-Plots", fill=TRUE)
     if(dim(df_num)[2]>1){
       cat("One Box-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+      cat("\\newline", fill=TRUE)
+      cat("See figures on next page. ", fill=TRUE)
     }
   } 
 }
@@ -388,6 +392,8 @@ if (exists("df_num")){
 def box(ax, var, xsize):
     sns.boxplot(df_num.iloc[:,var], ax = ax, color = '#2fa42d')
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
+    title = "Box-Plot of " + str(df_num.columns[var])
+    ax.set_title(title)
 
 sns.set_theme(style="whitegrid")
 for var in range(df_num.shape[1]):
@@ -397,3 +403,97 @@ for var in range(df_num.shape[1]):
   if (var==0):
     plt.plot()
 ```
+
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_num")){
+  if (dim(df_num)[2] >1){
+  cat("### Box-Plots Summary", fill=TRUE)
+  cat("Multiple Box-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+
+```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## Box-Plots Summary (tested for ncols <=25)
+### Define number of columns and rows for the multi-plot 
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_num.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
+   box(ax, var, 15)
+plt.show()
+```
+
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+if (exists("df_num")){
+  if (dim(df_num)[2]==1){
+    cat("### ECDF Plots", fill=TRUE)
+    cat("ECDF (Empirical Cumulative Distribution Function) Plot.  The blue line represents the CDF of a normal distribution. If the variable is normally distributed, the blue line approximates well the ECDF.  ", fill=TRUE)
+  } else if (dim(df_num)[2]>1){
+    cat("### ECDF Plots", fill=TRUE)
+    cat(" One ECDF (Empirical Cumulative Distribution Function) Plot per page for each variable. Variables are sorted alphabetically. The blue line represents the CDF of a normal distribution. If the variable is normally distributed, the blue line approximates well the ECDF.  ", fill=TRUE)
+    cat("\\newline", fill=TRUE)
+    cat("See figures on next page. ", fill=TRUE)
+  }
+}
+```
+
+
+```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## ECDF Large
+def ecdf(ax, var, ylabel, xsize):
+    sns.ecdfplot(df_num.iloc[:,var], ax = ax, color = '#2fa42d')
+    xaxis = np.arange(min(df_num.iloc[:,var]), max(df_num.iloc[:,var]), 0.001)
+    fit_normal = stats.norm.cdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
+    ax.plot(xaxis, fit_normal, 'r', lw = 1, color = '#396e9f')
+    ax.set_xlabel(df_num.columns[var], fontsize=xsize)
+    ax.set_ylabel(ylabel) 
+    title = "ECDF Plot of " + str(df_num.columns[var])
+    ax.set_title(title)
+    
+for var in range(df_num.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  ecdf(ax, var, "ECDF", 20)
+  plt.show()
+  if (var==0):
+    plt.plot()
+```
+
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_num")){
+  if (dim(df_num)[2] > 1){
+  cat("### ECDF Plots Summary", fill=TRUE)
+  cat("Multiple ECDF Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+
+```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## ECDF Plots Summary (tested for ncols <=25)
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_num.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
+   ecdf(ax, var,  "ECDF", 15)
+plt.show()
+```
+
+
