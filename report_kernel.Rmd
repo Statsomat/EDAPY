@@ -24,6 +24,8 @@ eval0 <- FALSE
 eval <- FALSE
 eval_num <- FALSE
 eval_num2 <- FALSE
+eval_factor <- FALSE
+eval_factor2 <- FALSE
 
 tryCatch({
   
@@ -230,6 +232,7 @@ if (exists("df_num")){
 ```{r, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 main <- import_main()
 main$df_num <- r_to_py(df_num)
+main$df_cat <- r_to_py(df_cat)
 ```
 
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
@@ -258,7 +261,7 @@ df_num_stats.drop(columns=['25%', '75%'], inplace=True)
 df_num_stats["N Missing"] = df_num.isna().sum()
 df_num_stats["N Valid"] = (df_num_stats["N Obs"] - df_num_stats["N Missing"])
 df_num_stats["% Complete"] = (df_num_stats["N Valid"] / df_num_stats["N Obs"])*100
-df_num_stats["N Unique"] = df_num.nunique()
+df_num_stats["N Unique"] = df_num.nunique(dropna=False)
 df_num_stats["MAD"] = df_num.mad(axis=0)
 df_num_stats["Skewness"] = df_num.skew(axis=0)
 df_num_stats["Kurtosis"] = df_num.kurtosis(axis=0)
@@ -391,7 +394,7 @@ if (exists("df_num")){
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 ## Box-Plots Large
 def box(ax, var, xsize):
-    sns.boxplot(df_num.iloc[:,var], ax = ax, color = '#2fa42d')
+    sns.boxplot(x=df_num.iloc[:,var], ax = ax, color = '#2fa42d')
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
     title = "Box-Plot of " + str(df_num.columns[var])
     ax.set_title(title)
@@ -518,17 +521,17 @@ if (exists("df_num")){
 
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 ## QQ Large
-def qqplot(var, ax):
+def qqplot(var, ax, xlabel, ylabel):
     sm.qqplot(df_num.iloc[:,var], ax = ax, 
               line = "q", 
               marker='.', markerfacecolor='#2fa42d', 
               markeredgecolor='#2fa42d', alpha=0.9)
-    ax.set_xlabel("Normal Quantiles")
-    ax.set_ylabel("Sample Quantiles for " + df_num.columns[var]) 
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel + df_num.columns[var]) 
     
 for var in range(df_num.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
-  qqplot(var, ax)
+  qqplot(var, ax, "Normal Quantiles", "Sample Quantiles for ")
   plt.show()
   if (var==0):
     plt.plot()
@@ -556,7 +559,46 @@ fig.tight_layout(pad=3.0)
 ax = trim_axs(ax, df_num.shape[1])
 fig.subplots_adjust(hspace = 1)
 for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
-    qqplot(var, ax)
+    qqplot(var, ax, "", "")
 plt.show()
 ```
 
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+    eval_factor <- TRUE
+    cat("# Results for Discrete Variables", fill=TRUE)
+    cat("## Descriptive Statistics", fill=TRUE)
+    cat("### Totals", fill = TRUE)
+    cat("The table is sorted by the variable name. If any, N Unique contains the missing category.", fill=TRUE)
+   } 
+}
+```
+
+
+```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+# Categorical Variables
+
+## Table 1
+df_cat = df_cat.astype("category")
+df_cat_stats = pd.DataFrame(df_cat.count(), columns=['N Obs'])
+df_cat_stats["N Missing"] = df_cat.isna().sum()
+df_cat_stats["N Valid"] = (df_cat_stats["N Obs"] - df_cat_stats["N Missing"])
+df_cat_stats["% Complete"] = (df_cat_stats["N Valid"] / df_cat_stats["N Obs"])*100
+df_cat_stats["N Unique"] = df_cat.nunique(dropna=False)
+df_cat_stats = df_cat_stats.round(2)
+
+### Restrict size of characters of index 
+cnames = np.array(df_cat_stats.index).astype('str')
+csize = min(np.max(np.char.str_len(cnames)),25)
+df_cat_stats.index = cnames[0:csize]
+
+### Sort by index 
+df_cat_stats.sort_index(inplace=True)
+df_cat_stats
+```
