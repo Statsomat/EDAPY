@@ -581,11 +581,11 @@ if (exists("df_factor")){
 ```
 
 
-```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 # Categorical Variables
 
 ## Table 1
-df_cat = df_cat.astype("category")
+df_cat = df_cat.astype("string")
 df_cat_stats = pd.DataFrame(df_cat.count(), columns=['N Obs'])
 df_cat_stats["N Missing"] = df_cat.isna().sum()
 df_cat_stats["N Valid"] = (df_cat_stats["N Obs"] - df_cat_stats["N Missing"])
@@ -602,3 +602,57 @@ df_cat_stats.index = cnames[0:csize]
 df_cat_stats.sort_index(inplace=True)
 df_cat_stats
 ```
+
+
+\pagebreak
+
+```{r, results="asis", eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+    cat("### Frequencies", fill = TRUE)
+    cat("The table is sorted by the variable name. For each variable, a maximum of 20 unique values are considered, sorted in decreasing order of their frequency. If any, missings are counted as a category. ", fill=TRUE)
+   } 
+}
+```
+
+
+```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+# Categorical Variables
+
+## Table 2
+df_cat_miss = df_cat.fillna('Missing')
+
+def freq(var):
+    
+    ## Compute Frequency and Percent columns
+    x = df_cat_miss[var].value_counts(sort = True), 
+    y = df_cat_miss[var].value_counts(normalize = True, sort = True)
+    
+    xdf = pd.DataFrame(x).transpose()
+    ydf = pd.DataFrame(y)
+    
+    xdf.rename(columns = {xdf.columns[0]: "Frequency"}, inplace=True)
+    ydf.rename(columns = {ydf.columns[0]: "Percent"}, inplace=True)
+  
+    xdf["Category"] = xdf.index 
+    ydf["Category"] = ydf.index 
+    
+    ## Merge columns and define output df
+    df = xdf.merge(ydf, on = "Category")
+    df["Variable"] = var
+    df = df[["Variable", "Category", "Frequency", "Percent"]]
+    
+    ## Only the first 20 categories
+    df = df.head(n=20)
+    
+    ## Make console friendly output
+    df = df.to_string(index=False)
+    return(df)
+   
+
+for var in df_cat_miss.columns:
+    print(freq(var))
+```
+
+
