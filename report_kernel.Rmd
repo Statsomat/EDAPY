@@ -9,6 +9,7 @@ virtualenv_create('shiny-app-env', python= 'python3')
 use_virtualenv('shiny-app-env', required = T)
 virtualenv_install('shiny-app-env', packages = c('seaborn'))
 virtualenv_install('shiny-app-env', packages = c('scipy'))
+virtualenv_install('shiny-app-env', packages = c('tabulate'))
 ```
 
 
@@ -243,6 +244,7 @@ import matplotlib.pyplot as plt
 from scipy import stats 
 import math
 import statsmodels.api as sm
+from tabulate import tabulate
 
 # Set console printing options 
 pd.set_option('display.max_rows', 500)
@@ -617,14 +619,15 @@ if (exists("df_factor")){
 ```
 
 
-```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8), results="asis"}
 # Categorical Variables
 
 ## Table 2
+## Replace missing values 
 df_cat_miss = df_cat.fillna('Missing')
 
 def freq(var):
-    
+
     ## Compute Frequency and Percent columns
     x = df_cat_miss[var].value_counts(sort = True), 
     y = df_cat_miss[var].value_counts(normalize = True, sort = True)
@@ -646,13 +649,15 @@ def freq(var):
     ## Only the first 20 categories
     df = df.head(n=20)
     
-    ## Make console friendly output
-    df = df.to_string(index=False)
     return(df)
    
-
+# Initialize list of dfs
+listdf = []
 for var in df_cat_miss.columns:
-    print(freq(var))
+    listdf.append(freq(var))
+    
+df_freq = pd.concat(listdf, ignore_index=True)
+print(tabulate(df_freq, headers='keys', tablefmt="latex_longtable", showindex=False))
 ```
 
 
