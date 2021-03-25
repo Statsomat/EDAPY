@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Data Analysis I"
+title: "Exploratory Data Analysis"
 ---
 
 
@@ -236,7 +236,7 @@ main$df_num <- r_to_py(df_num)
 main$df_cat <- r_to_py(df_cat)
 ```
 
-```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, results="asis"}
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -254,6 +254,8 @@ pd.set_option('display.width', 1000)
 
 # Continuous variables
 ## Descriptive statistics
+### Sort by column name
+df_num.sort_index(axis=1, inplace=True)
 df_num_stats = df_num.describe()
 df_num_stats = df_num_stats.transpose()
 df_num_stats.rename(columns={"count": "N Obs", "mean": "Mean", "50%": "Median", 
@@ -276,11 +278,11 @@ df_num_stats = df_num_stats.reindex(columns=["N Obs", "N Missing", "N Valid",
                                              "SD", "Median", "MAD", "Min", "Max", 
                                              "Skewness", "Kurtosis", "CV"]) 
 
-### Order by variable name
+### Sort by variable name
 df_num_stats.sort_index(inplace=True)
 
 ### Output
-df_num_stats
+print(tabulate(df_num_stats, headers='keys', tablefmt="latex_longtable"))
 ```
 
 \pagebreak
@@ -509,10 +511,10 @@ plt.show()
 ```{r, results="asis", eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 if (exists("df_num")){
   if (dim(df_num)[2]==1){
-    cat("### Q-Q-Plots", fill=TRUE)
+    cat("### QQ-Plots", fill=TRUE)
   } else if (dim(df_num)[2]>1){
-    cat("### Q-Q-Plots", fill=TRUE)
-    cat("One Q-Q-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    cat("### QQ-Plots", fill=TRUE)
+    cat("One QQ-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
     cat("\\newline", fill=TRUE)
     cat("See figures on next page. ", fill=TRUE)
   }
@@ -547,8 +549,8 @@ for var in range(df_num.shape[1]):
 # Title
 if (exists("df_num")){
   if (dim(df_num)[2] >1){
-  cat("### Q-Q-Plots Summary", fill=TRUE)
-  cat("Multiple Q-Q-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  cat("### QQ-Plots Summary", fill=TRUE)
+  cat("Multiple QQ-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
   } 
 } 
 ```
@@ -583,7 +585,7 @@ if (exists("df_factor")){
 ```
 
 
-```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8), results="asis"}
 # Categorical Variables
 
 ## Table 1
@@ -602,7 +604,7 @@ df_cat_stats.index = cnames[0:csize]
 
 ### Sort by index 
 df_cat_stats.sort_index(inplace=True)
-df_cat_stats
+print(tabulate(df_cat_stats, headers='keys', tablefmt="latex_longtable"))
 ```
 
 
@@ -623,8 +625,10 @@ if (exists("df_factor")){
 # Categorical Variables
 
 ## Table 2
-## Replace missing values 
-df_cat_miss = df_cat.fillna('Missing')
+
+## Data preparation 
+df_cat.sort_index(axis=1, inplace=True)
+df_cat_miss = df_cat.replace('NA','Missing') # df_cat_miss = df_cat.fillna('Missing') locally for the user 
 
 def freq(var):
 
@@ -660,4 +664,129 @@ df_freq = pd.concat(listdf, ignore_index=True)
 print(tabulate(df_freq, headers='keys', tablefmt="latex_longtable", showindex=False))
 ```
 
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+  cat("## Graphics", fill=TRUE)
+  cat("### Bar-Plots", fill=TRUE)
+  if(dim(df_factor)[2]>1){
+    cat("One Bar-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+  }
+  } 
+}
+```
+
+
+```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## Bar-Plot Large
+def barplot(var, ax):
+    sns.countplot(x = df_cat_miss.columns[var], ax = ax, 
+               color = '#2fa42d', data = df_cat_miss, 
+               order = df_cat_miss.iloc[:,var].value_counts(ascending = True).index)
+    ax.set_xlabel(df_cat_miss.columns[var])
+    ax.set_ylabel("Frequency") 
+    title = "Bar-Plot of " + str(df_cat_miss.columns[var])
+    ax.set_title(title)
+    
+for var in range(df_cat_miss.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  barplot(var, ax)
+  plt.show()
+  if (var==0):
+    plt.plot()
+```
+
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] >1){
+  cat("### Bar-Plots Summary")
+  cat("\n\n\ Multiple Bar-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+
+```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## Bar-Plots Summary (tested for ncols <=25)
+nrow = math.ceil(np.sqrt(df_cat.shape[1]))
+ncol = math.ceil(df_cat.shape[1] / nrow)
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_cat.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_cat.shape[1])):
+    barplot(var, ax)
+plt.show()
+```
+
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+if (exists("df_factor")){
+  if (dim(df_factor)[2] != 0L){
+    cat("### Pie Plots", fill=TRUE)
+    if(dim(df_factor)[2]>1){
+      cat("One Pie Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    }
+  } 
+}
+```
+
+
+```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+# Pie-Plot Large
+def pieplot(var,ax, titlesize, textsize, radius):
+    cats =  df_cat_miss.iloc[:,var].value_counts()
+    labels = cats.index
+    ax.pie(x = cats, autopct="%.1f%%", explode=[0]*len(labels), 
+            labels = labels, pctdistance=0.7, 
+            textprops={'fontsize': textsize}, shadow = True, radius = radius)
+    ax.set_title("Pie-Plot of " + df_cat_miss.columns[var], 
+                 fontsize = titlesize, pad=10)
+    
+for var in range(df_cat_miss.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  pieplot(var, ax, titlesize=14, textsize=8, radius=1)
+  plt.show()
+  if (var==0):
+    plt.plot()   
+```
+
+
+\pagebreak
+
+
+```{r, results="asis", eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title
+if (exists("df_factor")){
+  if (dim(df_factor)[2] >1){
+  cat("### Pie Plots Summary", fill=TRUE)
+  cat("Multiple Pie Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  } 
+} 
+```
+
+
+```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## Pie-Plots Summary (tested for ncols <=25)
+plt.rcParams.update(plt.rcParamsDefault)
+fig, ax = plt.subplots(nrow, ncol, sharex=True, sharey=True, figsize=(10,10))
+ax = trim_axs(ax, df_cat.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_cat.shape[1])):
+    pieplot(var, ax, titlesize=7, textsize=6, radius=1.2)
+plt.subplots_adjust(hspace=0.3, wspace=0.01)   
+```
 
