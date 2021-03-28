@@ -25,7 +25,7 @@ header-includes:
    - \usepackage{float}
 ---
 
-
+\pagebreak 
 
 ```{r child = 'report_kernel.Rmd'}
 ```

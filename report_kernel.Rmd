@@ -676,14 +676,17 @@ if (exists("df_factor")){
   cat("### Bar-Plots", fill=TRUE)
   if(dim(df_factor)[2]>1){
     cat("One Bar-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    eval_factor2 <- TRUE 
   }
   } 
 }
 ```
 
 
-```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
-## Bar-Plot Large
+```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+# Categorical Variables
+
+# Bar-Plot Large
 def barplot(var, ax):
     sns.countplot(x = df_cat_miss.columns[var], ax = ax, 
                color = '#2fa42d', data = df_cat_miss, 
@@ -705,7 +708,7 @@ for var in range(df_cat_miss.shape[1]):
 \pagebreak
 
 
-```{r, results="asis", eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+```{r, results="asis", eval=eval_factor2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Title
 if (exists("df_factor")){
   if (dim(df_factor)[2] >1){
@@ -716,7 +719,7 @@ if (exists("df_factor")){
 ```
 
 
-```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+```{python, eval=eval_factor2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 ## Bar-Plots Summary (tested for ncols <=25)
 nrow = math.ceil(np.sqrt(df_cat.shape[1]))
 ncol = math.ceil(df_cat.shape[1] / nrow)
@@ -745,7 +748,7 @@ if (exists("df_factor")){
 ```
 
 
-```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 # Pie-Plot Large
 def pieplot(var,ax, titlesize, textsize, radius):
     cats =  df_cat_miss.iloc[:,var].value_counts()
@@ -768,7 +771,7 @@ for var in range(df_cat_miss.shape[1]):
 \pagebreak
 
 
-```{r, results="asis", eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+```{r, results="asis", eval=eval_factor2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Title
 if (exists("df_factor")){
   if (dim(df_factor)[2] >1){
@@ -779,7 +782,7 @@ if (exists("df_factor")){
 ```
 
 
-```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+```{python, eval=eval_factor2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,7)}
 ## Pie-Plots Summary (tested for ncols <=25)
 plt.rcParams.update(plt.rcParamsDefault)
 fig, ax = plt.subplots(nrow, ncol, sharex=True, sharey=True, figsize=(10,10))
@@ -787,6 +790,7 @@ ax = trim_axs(ax, df_cat.shape[1])
 fig.subplots_adjust(hspace = 1)
 for ax, var in zip(ax.flatten(), range(df_cat.shape[1])):
     pieplot(var, ax, titlesize=7, textsize=6, radius=1.2)
-plt.subplots_adjust(hspace=0.3, wspace=0.01)   
+plt.subplots_adjust(hspace=0.3, wspace=0.01) 
+plt.show()
 ```
 

@@ -70,13 +70,13 @@ shinyUI(fluidPage(
   
   tags$div(a(img(src='Logo.jpg', width=200), href="https://www.statsomat.com", target="_blank")),
   
-  h1("Exploratory Data Analysis (EDA)", 
+  h1("Exploratory Data Analysis (EDA) I", 
      style = "font-family: 'Helvetica';
      color: #fff; text-align: center;
      background-color: #396e9f;
      padding: 20px;
      margin-bottom: 0px;"),
-  h5("Experimental Beta Version", 
+  h5("Univariate", 
      style = "font-family: 'Helvetica';
      color: #fff; text-align: center;
      background-color: #2fa42d;
