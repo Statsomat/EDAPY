@@ -76,7 +76,7 @@ shinyUI(fluidPage(
      background-color: #396e9f;
      padding: 20px;
      margin-bottom: 0px;"),
-  h5("Univariate", 
+  h5("Python", 
      style = "font-family: 'Helvetica';
      color: #fff; text-align: center;
      background-color: #2fa42d;
@@ -120,17 +120,16 @@ shinyUI(fluidPage(
                                                 Dot = "."),
                                     selected = "auto", inline=TRUE),
                        
-                       tags$b("By clicking the Browse button and uploading a file, you agree to the Statsomat",
+                       tags$small("By clicking the Browse button and uploading a file, you agree to the",
                               style="color: #808080;"),
                        
-                       tags$a(href="https://statsomat.com/terms", target="_blank", "Terms of Use.", style="
-                              font-weight: bold;")
+                       tags$a(href="https://statsomat.com/terms", target="_blank", "Terms of Use.", style="font-weight: bold; font-size: 9pt;")
             ),
           
             
             wellPanel(style = "background: #adc7de;", 
                       
-                      h3("Select Variables (max 10)"),
+                      h3("Select Variables (max 25)"),
                       
                       uiOutput("selection1")
                     
@@ -188,8 +187,6 @@ shinyUI(fluidPage(
           wellPanel(style = "background: #fff;", includeHTML("www/Instructions.html")),
           wellPanel(style = "background: #fff;", includeHTML("www/Secure.html")), 
           wellPanel(style = "background: #fff;", includeHTML("www/OpenSource.html")), 
-          wellPanel(style = "background: #fff;", includeHTML("www/Other.html")), 
-          wellPanel(style = "background: #fff;", includeHTML("www/Also.html")),
           wellPanel(style = "background: #fff;", includeHTML("www/Contact.html"))
        
     ), # column 

@@ -224,14 +224,19 @@ if (exists("df_num")){
     eval_num <- TRUE
     cat("# Results for Numerical Variables", fill=TRUE)
     cat("## Descriptive Statistics", fill=TRUE)
-    cat("Variables are sorted alphabetically. Missings are omitted in the stats. CV only for positive variables. ", fill=TRUE)
+    cat("Variables are sorted alphabetically. Missings are omitted in stats. CV only for positive variables. ", fill=TRUE)
    
   } 
 }
 ```
 
 ```{r, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Send df to Python 
+## Call Python environment 
 main <- import_main()
+## Replace NA with NaN in df_num to be converted correctly by reticulate 
+df_num[is.na(df_num)] <- NaN
+## Add to Python environment 
 main$df_num <- r_to_py(df_num)
 main$df_cat <- r_to_py(df_cat)
 ```
@@ -324,7 +329,9 @@ def histo(ax, var, ylabel, xsize):
     sns.histplot(df_num.iloc[:,var], ax = ax, stat='density', 
                  color = '#2fa42d', kde = True, 
                  bins = len(np.unique(df_num.iloc[:,var]))//2)
-    xaxis = np.arange(min(df_num.iloc[:,var]), max(df_num.iloc[:,var]), 0.001)
+    minvar = df_num.iloc[:,var].min()
+    maxvar = df_num.iloc[:,var].max()
+    xaxis = np.arange(minvar, maxvar, 0.001)
     fit_normal = stats.norm.pdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
     ax.plot(xaxis, fit_normal, 'r', lw = 1, color = '#396e9f')
     ax.tick_params(axis='both', which='major', labelsize=10)
@@ -462,7 +469,9 @@ if (exists("df_num")){
 ## ECDF Large
 def ecdf(ax, var, ylabel, xsize):
     sns.ecdfplot(df_num.iloc[:,var], ax = ax, color = '#2fa42d')
-    xaxis = np.arange(min(df_num.iloc[:,var]), max(df_num.iloc[:,var]), 0.001)
+    minvar = df_num.iloc[:,var].min()
+    maxvar = df_num.iloc[:,var].max()
+    xaxis = np.arange(minvar, maxvar, 0.001)
     fit_normal = stats.norm.cdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
     ax.plot(xaxis, fit_normal, 'r', lw = 1, color = '#396e9f')
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
