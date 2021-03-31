@@ -10,6 +10,7 @@ use_virtualenv('shiny-app-env', required = T)
 virtualenv_install('shiny-app-env', packages = c('seaborn'))
 virtualenv_install('shiny-app-env', packages = c('scipy'))
 virtualenv_install('shiny-app-env', packages = c('tabulate'))
+virtualenv_install('shiny-app-env', packages = c('statsmodels'))
 ```
 
 
@@ -600,7 +601,7 @@ if (exists("df_factor")){
 ## Table 1
 df_cat = df_cat.astype("string")
 df_cat_stats = pd.DataFrame(df_cat.count(), columns=['N Obs'])
-df_cat_stats["N Missing"] = df_cat.isna().sum()
+df_cat_stats["N Missing"] = df_cat.apply(lambda x: (x == 'NA').sum()) # locally use df_cat.isna().sum()
 df_cat_stats["N Valid"] = (df_cat_stats["N Obs"] - df_cat_stats["N Missing"])
 df_cat_stats["% Complete"] = (df_cat_stats["N Valid"] / df_cat_stats["N Obs"])*100
 df_cat_stats["N Unique"] = df_cat.nunique(dropna=False)
@@ -609,7 +610,7 @@ df_cat_stats = df_cat_stats.round(2)
 ### Restrict size of characters of index 
 cnames = np.array(df_cat_stats.index).astype('str')
 csize = min(np.max(np.char.str_len(cnames)),25)
-df_cat_stats.index = cnames[0:csize]
+df_cat_stats.index = list(map(lambda x: x[0:csize], cnames))
 
 ### Sort by index 
 df_cat_stats.sort_index(inplace=True)
@@ -638,6 +639,9 @@ if (exists("df_factor")){
 ## Data preparation 
 df_cat.sort_index(axis=1, inplace=True)
 df_cat_miss = df_cat.replace('NA','Missing') # df_cat_miss = df_cat.fillna('Missing') locally for the user 
+
+## Restrict to first characters
+df_cat_miss = df_cat_miss.applymap(lambda x: x[0:csize])
 
 def freq(var):
 
@@ -696,10 +700,19 @@ if (exists("df_factor")){
 # Categorical Variables
 
 # Bar-Plot Large
-def barplot(var, ax):
+def barplot(var, ax, type):
     sns.countplot(x = df_cat_miss.columns[var], ax = ax, 
                color = '#2fa42d', data = df_cat_miss, 
                order = df_cat_miss.iloc[:,var].value_counts(ascending = True).index)
+               
+    # Rotate labels 
+    if df_cat_miss.iloc[:,var].nunique() in range(10,41):
+      ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="right")
+    
+    # No labels for variables with ncats > 40 or type summary
+    if df_cat_miss.iloc[:,var].nunique() > 40 or type=="Summary":
+      ax.set_xticklabels([])  
+      
     ax.set_xlabel(df_cat_miss.columns[var])
     ax.set_ylabel("Frequency") 
     title = "Bar-Plot of " + str(df_cat_miss.columns[var])
@@ -707,7 +720,7 @@ def barplot(var, ax):
     
 for var in range(df_cat_miss.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
-  barplot(var, ax)
+  barplot(var, ax, type="Large")
   plt.show()
   if (var==0):
     plt.plot()
@@ -737,7 +750,7 @@ fig.tight_layout(pad=3.0)
 ax = trim_axs(ax, df_cat.shape[1])
 fig.subplots_adjust(hspace = 1)
 for ax, var in zip(ax.flatten(), range(df_cat.shape[1])):
-    barplot(var, ax)
+    barplot(var, ax, type="Summary")
 plt.show()
 ```
 
