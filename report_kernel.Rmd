@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Data Analysis"
+title: "Exploratory Data Analysis with Python"
 ---
 
 
@@ -217,6 +217,17 @@ if (exists("df_cont")) df_num <- df_cont
 if (exists("df_cat")) df_factor <- df_cat
 ```
 
+```{r, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Send df to Python 
+## Call Python environment 
+main <- import_main()
+## Replace NA with NaN in df_num to be converted correctly by reticulate 
+df_num[is.na(df_num)] <- NaN
+## Add data frames to Python environment 
+if (exists("df_num")) main$df_num <- r_to_py(df_num)
+if (exists("df_cat")) main$df_cat <- r_to_py(df_cat)
+```
+
 
 ```{r, results="asis", eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Title 
@@ -225,21 +236,10 @@ if (exists("df_num")){
     eval_num <- TRUE
     cat("# Results for Numerical Variables", fill=TRUE)
     cat("## Descriptive Statistics", fill=TRUE)
-    cat("Variables are sorted alphabetically. Missings are omitted in stats. CV only for positive variables. ", fill=TRUE)
+    cat("Variables are sorted alphabetically. Missings are omitted in stats (besides N Unique). CV only for positive variables. ", fill=TRUE)
    
   } 
 }
-```
-
-```{r, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
-# Send df to Python 
-## Call Python environment 
-main <- import_main()
-## Replace NA with NaN in df_num to be converted correctly by reticulate 
-df_num[is.na(df_num)] <- NaN
-## Add to Python environment 
-main$df_num <- r_to_py(df_num)
-main$df_cat <- r_to_py(df_cat)
 ```
 
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, results="asis"}
@@ -251,6 +251,8 @@ from scipy import stats
 import math
 import statsmodels.api as sm
 from tabulate import tabulate
+import warnings 
+warnings.filterwarnings( "ignore", module = "matplotlib.pyplot.figure" )
 
 # Set console printing options 
 pd.set_option('display.max_rows', 500)
@@ -277,6 +279,7 @@ df_num_stats["Skewness"] = df_num.skew(axis=0)
 df_num_stats["Kurtosis"] = df_num.kurtosis(axis=0)
 df_num_stats.loc[df_num_stats["Min"]>0,"CV"] = df_num_stats["SD"] / df_num_stats["Mean"]
 df_num_stats = df_num_stats.round(2)
+df_num_stats.loc[df_num_stats["Min"]<=0,"CV"] = ""
 
 ### Reorder columns to be similar to the output of the R app 
 df_num_stats = df_num_stats.reindex(columns=["N Obs", "N Missing", "N Valid", 
@@ -286,6 +289,11 @@ df_num_stats = df_num_stats.reindex(columns=["N Obs", "N Missing", "N Valid",
 
 ### Sort by variable name
 df_num_stats.sort_index(inplace=True)
+
+### Restrict size of characters of index 
+cnames = np.array(df_num_stats.index).astype('str')
+csize = min(np.max(np.char.str_len(cnames)),25)
+df_num_stats.index = list(map(lambda x: x[0:csize], cnames))
 
 ### Output
 print(tabulate(df_num_stats, headers='keys', tablefmt="latex_longtable"))
@@ -300,7 +308,7 @@ if (exists("df_num")){
     cat("## Graphics", fill=TRUE)
     cat("### Histograms", fill=TRUE)
     if(dim(df_num)[2]> 1){
-      cat("Details: Density Histograms. One large figure per page for each variable. Variables are sorted alphabetically. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
+      cat("Details: Density Histograms. One large figure per page for each variable, sorted alphabetically. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
       cat("\\newline", fill=TRUE)
       cat("See figures on next page. ", fill=TRUE)
     }
@@ -334,7 +342,7 @@ def histo(ax, var, ylabel, xsize):
     maxvar = df_num.iloc[:,var].max()
     xaxis = np.arange(minvar, maxvar, 0.001)
     fit_normal = stats.norm.pdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
-    ax.plot(xaxis, fit_normal, 'r', lw = 1, color = '#396e9f')
+    ax.plot(xaxis, fit_normal, lw = 1, color = '#396e9f')
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
     ax.set_ylabel(ylabel)
@@ -394,8 +402,6 @@ if (exists("df_num")){
     cat("### Box-Plots", fill=TRUE)
     if(dim(df_num)[2]>1){
       cat("One Box-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
-      cat("\\newline", fill=TRUE)
-      cat("See figures on next page. ", fill=TRUE)
     }
   } 
 }
@@ -418,6 +424,7 @@ for var in range(df_num.shape[1]):
   plt.show()
   if (var==0):
     plt.plot()
+  plt.close(fig)
 ```
 
 
@@ -474,7 +481,7 @@ def ecdf(ax, var, ylabel, xsize):
     maxvar = df_num.iloc[:,var].max()
     xaxis = np.arange(minvar, maxvar, 0.001)
     fit_normal = stats.norm.cdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
-    ax.plot(xaxis, fit_normal, 'r', lw = 1, color = '#396e9f')
+    ax.plot(xaxis, fit_normal, lw = 1, color = '#396e9f')
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
     ax.set_ylabel(ylabel) 
     title = "ECDF Plot of " + str(df_num.columns[var])
@@ -525,8 +532,6 @@ if (exists("df_num")){
   } else if (dim(df_num)[2]>1){
     cat("### QQ-Plots", fill=TRUE)
     cat("One QQ-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
-    cat("\\newline", fill=TRUE)
-    cat("See figures on next page. ", fill=TRUE)
   }
 }
 ```
@@ -536,9 +541,9 @@ if (exists("df_num")){
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 ## QQ Large
 def qqplot(var, ax, xlabel, ylabel):
-    sm.qqplot(df_num.iloc[:,var], ax = ax, 
-              line = "q", 
-              marker='.', markerfacecolor='#2fa42d', 
+    pp = sm.ProbPlot(df_num.iloc[:,var])
+    pp.qqplot(marker='.', ax = ax, line = 'q', 
+              markerfacecolor='#2fa42d', 
               markeredgecolor='#2fa42d', alpha=0.9)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel + df_num.columns[var]) 
@@ -688,7 +693,7 @@ if (exists("df_factor")){
   cat("## Graphics", fill=TRUE)
   cat("### Bar-Plots", fill=TRUE)
   if(dim(df_factor)[2]>1){
-    cat("One Bar-Plot per page for each variable. Variables are sorted alphabetically.  ", fill=TRUE)
+    cat("One Bar-Plot per page for each variable. Variables are sorted alphabetically. No labels for variables with more than 40 categories.", fill=TRUE)
     eval_factor2 <- TRUE 
   }
   } 
@@ -735,7 +740,7 @@ for var in range(df_cat_miss.shape[1]):
 if (exists("df_factor")){
   if (dim(df_factor)[2] >1){
   cat("### Bar-Plots Summary")
-  cat("\n\n\ Multiple Bar-Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  cat("\n\n\ Multiple Bar-Plots of variables in one figure. Variables are sorted alphabetically. No labels displayed. ", fill=TRUE)
   } 
 } 
 ```
@@ -799,6 +804,8 @@ if (exists("df_factor")){
   if (dim(df_factor)[2] >1){
   cat("### Pie Plots Summary", fill=TRUE)
   cat("Multiple Pie Plots of variables in one figure. Variables are sorted alphabetically.  ", fill=TRUE)
+  cat("\\newline", fill=TRUE)
+  cat("See figures on next page. ", fill=TRUE)
   } 
 } 
 ```

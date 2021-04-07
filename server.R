@@ -280,16 +280,19 @@ function(input, output, session) {
           
         } else {
           
-          if (input$fencoding == "UTF-8"){
+         # if (input$fencoding == "UTF-8"){
             
-            tmp_file <- render('report_code_UTF8.Rmd', pdf_document(latex_engine = "xelatex"),
-                          params = params,
-                          envir = new.env(parent = globalenv())
+          #  tmp_file <- render('report_code_UTF8.Rmd', pdf_document(latex_engine = "xelatex"),
+           #               params = params,
+            #              envir = new.env(parent = globalenv())
                           
-            )} else {tmp_file <- render('report_code_unknown.Rmd', pdf_document(latex_engine = "xelatex"),
+          #  )} else {
+              
+              tmp_file <- render('report_code_unknown.Rmd', pdf_document(latex_engine = "xelatex"),
                                    params = params,
                                    envir = new.env(parent = globalenv())
-            )}
+                                 )
+          #  }
           
         }
     
