@@ -228,12 +228,8 @@ function(input, output, session) {
     src4 <- normalizePath('references.bib')
     src5 <- normalizePath('report_code_unknown.Rmd') 
     src6 <- normalizePath('report_code_common.Rmd') 
-    src7 <- normalizePath('report_code_UTF8.Rmd')
     src8 <- normalizePath('FiraSans-Bold.otf')
     src9 <- normalizePath('FiraSans-Regular.otf')
-   # src10 <- normalizePath('word_template.docx')
-   # src11 <- normalizePath('report_kernel_word.Rmd')
-   # src12 <- normalizePath('report_word.Rmd')
     
     # Temporarily switch to the temp dir
     owd <- setwd(tempdir())
@@ -245,19 +241,15 @@ function(input, output, session) {
     file.copy(src4, 'references.bib', overwrite = TRUE)
     file.copy(src5, 'report_code_unknown.Rmd', overwrite = TRUE)
     file.copy(src6, 'report_code_common.Rmd', overwrite = TRUE)
-    file.copy(src7, 'report_code_UTF8.Rmd', overwrite = TRUE)
     file.copy(src8, 'FiraSans-Bold.otf', overwrite = TRUE)
     file.copy(src9, 'FiraSans-Regular.otf', overwrite = TRUE)
-   # file.copy(src10, 'word_template.docx', overwrite = TRUE)
-   # file.copy(src11, 'report_kernel_word.Rmd', overwrite = TRUE)
-   # file.copy(src12, 'report_word.Rmd', overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
     enc_guessed <- guess_encoding(input$file$datapath)
     enc_guessed_first <- enc_guessed[[1]][1]
     
     params <- list(data = datainput(), filename=input$file, fencoding=input$fencoding, decimal=input$decimal, enc_guessed = enc_guessed_first, 
-                   vars1 = input$selection1$right)
+                   vars1 = input$selection1$right, continuity=input$continuity)
    
     
     
@@ -279,20 +271,11 @@ function(input, output, session) {
           )
           
         } else {
-          
-         # if (input$fencoding == "UTF-8"){
-            
-          #  tmp_file <- render('report_code_UTF8.Rmd', pdf_document(latex_engine = "xelatex"),
-           #               params = params,
-            #              envir = new.env(parent = globalenv())
-                          
-          #  )} else {
-              
-              tmp_file <- render('report_code_unknown.Rmd', pdf_document(latex_engine = "xelatex"),
-                                   params = params,
-                                   envir = new.env(parent = globalenv())
-                                 )
-          #  }
+        
+          tmp_file <- render('report_code_unknown.Rmd', html_document(),
+                             params = params,
+                             envir = new.env(parent = globalenv())
+                             )
           
         }
     
@@ -324,7 +307,12 @@ function(input, output, session) {
   output$download <- downloadHandler(
     
     filename = function() {
-      paste('MyReport',sep = '.','pdf')
+      
+      if (input$rcode == "No"){
+        paste('MyReport',sep = '.','pdf')
+      } else {
+        paste('MyCode',sep = '.','html')
+      }
     },
     
     content = function(file) {

@@ -70,13 +70,13 @@ shinyUI(fluidPage(
   
   tags$div(a(img(src='Logo.jpg', width=200), href="https://www.statsomat.com", target="_blank")),
   
-  h1("edapy", 
+  h1("Exploratory Data Analysis (EDA)", 
      style = "font-family: 'Helvetica';
      color: #fff; text-align: center;
      background-color: #396e9f;
      padding: 20px;
      margin-bottom: 0px;"),
-  h3("Exploratory Data Analysis (EDA) with Python", 
+  h5("With Python", 
      style = "font-family: 'Helvetica';
      color: #fff; text-align: center;
      background-color: #2fa42d;
@@ -119,6 +119,12 @@ shinyUI(fluidPage(
                                                 Comma = ",",
                                                 Dot = "."),
                                     selected = "auto", inline=TRUE),
+                       
+                       # Input: Select continuity ----
+                       radioButtons("continuity", "Continuity",
+                                    choices = c(Severe = "severe", 
+                                                Relaxed = "relaxed"),
+                                    selected = "severe", inline=TRUE),
                        
                        tags$small("By clicking the Browse button and uploading a file, you agree to the",
                               style="color: #808080;"),

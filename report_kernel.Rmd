@@ -89,8 +89,13 @@ if (ncol(df_num)>0){
 
   rateunique_df <- sapply(df_num, function(col) continuous(col))
   cols_continuous <- names(which(rateunique_df == TRUE))
-  df_cont <- df_num[,rateunique_df,drop=FALSE] # numeric, continuous resp. assumption fulfilled 
-  df_noncont <- df_num[,!rateunique_df,drop=FALSE] # numeric, non-continuous 
+  
+  if (params$continuity == "severe"){
+    df_cont <- df_num[,rateunique_df,drop=FALSE] # numeric, continuous resp. assumption fulfilled 
+    df_noncont <- df_num[,!rateunique_df,drop=FALSE] # numeric, non-continuous 
+  } else {
+    df_cont <- df_num 
+  }
   
 } 
 
@@ -212,7 +217,7 @@ if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
 \pagebreak
 
 ```{r, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
-# Instead of updating the rest of the code:
+# Copy
 if (exists("df_cont")) df_num <- df_cont
 if (exists("df_cat")) df_factor <- df_cat
 ```
@@ -224,25 +229,12 @@ main <- import_main()
 ## Replace NA with NaN in df_num to be converted correctly by reticulate 
 df_num[is.na(df_num)] <- NaN
 ## Add data frames to Python environment 
-if (exists("df_num")) main$df_num <- r_to_py(df_num)
+if (exists("df_cont")) main$df_num <- r_to_py(df_num)
 if (exists("df_cat")) main$df_cat <- r_to_py(df_cat)
 ```
 
 
-```{r, results="asis", eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
-# Title 
-if (exists("df_num")){
-  if (dim(df_num)[2] != 0L){
-    eval_num <- TRUE
-    cat("# Results for Numerical Variables", fill=TRUE)
-    cat("## Descriptive Statistics", fill=TRUE)
-    cat("Variables are sorted alphabetically. Missings are omitted in stats (besides N Unique). CV only for positive variables. ", fill=TRUE)
-   
-  } 
-}
-```
-
-```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, results="asis"}
+```{python, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, results="asis"}
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -258,22 +250,37 @@ warnings.filterwarnings( "ignore", module = "matplotlib.pyplot.figure" )
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 1000)
+```
 
 
+```{r, results="asis", eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+# Title 
+if (exists("df_num")){
+  if (dim(df_num)[2] != 0L){
+    eval_num <- TRUE
+    cat("# Results for Numerical Variables", fill=TRUE)
+    cat("## Descriptive Statistics", fill=TRUE)
+    cat("Variables are sorted alphabetically. Missings are omitted in stats. CV only for positive variables. ", fill=TRUE)
+   
+  } 
+}
+```
+
+
+```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, results="asis"}
 # Continuous variables
 ## Descriptive statistics
 ### Sort by column name
 df_num.sort_index(axis=1, inplace=True)
 df_num_stats = df_num.describe()
 df_num_stats = df_num_stats.transpose()
-df_num_stats.rename(columns={"count": "N Obs", "mean": "Mean", "50%": "Median", 
-                             "std": "SD", "min": "Min", "max": "Max"}, inplace=True)
-df_num_stats["N Obs"] = df_num_stats["N Obs"].astype('int64') 
 df_num_stats.drop(columns=['25%', '75%'], inplace=True)
+df_num_stats.rename(columns={"count": "N Valid", "mean": "Mean", "50%": "Median", 
+                             "std": "SD", "min": "Min", "max": "Max"}, inplace=True)
+df_num_stats["N Obs"] = df_num.shape[0]
 df_num_stats["N Missing"] = df_num.isna().sum()
-df_num_stats["N Valid"] = (df_num_stats["N Obs"] - df_num_stats["N Missing"])
 df_num_stats["% Complete"] = (df_num_stats["N Valid"] / df_num_stats["N Obs"])*100
-df_num_stats["N Unique"] = df_num.nunique(dropna=False)
+df_num_stats["N Unique"] = df_num.nunique(dropna=True)
 df_num_stats["MAD"] = df_num.mad(axis=0)
 df_num_stats["Skewness"] = df_num.skew(axis=0)
 df_num_stats["Kurtosis"] = df_num.kurtosis(axis=0)
@@ -322,7 +329,6 @@ if (exists("df_num")){
   if (dim(df_num)[2] == 1){
     cat("## Graphics", fill=TRUE)
     cat("### Histograms", fill=TRUE)
-    eval_num <- TRUE
     if(dim(df_num)[2]==1){
       cat("Details: Density Histogram. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
       cat("\\newline", fill=TRUE)

@@ -2,11 +2,9 @@
 title: "Exploratory Data Analysis with Python"
 author: "Statsomat.com"
 date: "`r format(Sys.time(), '%d %B %Y')`"
-output:
-  pdf_document:
-    latex_engine: xelatex
-    toc: true
-    toc_depth: 2
+output: 
+  html_document:
+    highlight: NULL
 classoption: landscape
 params:
   data: NA
@@ -15,6 +13,7 @@ params:
   decimal: NA
   enc_guessed: NA
   vars1: NA
+  continuity: NA
 header-includes:
    - \usepackage{xcolor}
    - \setmainfont[BoldFont=FiraSans-Bold, Extension=.otf]{FiraSans-Regular}
@@ -24,7 +23,7 @@ header-includes:
 ---
 
 
-```{r child = 'report_kernel.Rmd'}
+```{r child = 'report_kernel.Rmd', include = FALSE}
 ```
 
 
@@ -37,25 +36,34 @@ if (exists("eval")) eval_code <- eval else eval_code <- FALSE
 \pagestyle{empty} 
 
 
+<style>
+pre.whites {
+    background-color: #ffffff !important;
+    border: 0;
+}
+</style>
+
+
+```{css, echo=FALSE}
+.evals {
+  background-color: lightpink;
+  border: 3px solid red;
+  font-weight: bold;
+}
+```
+
+
 ```{r, results="asis", eval = eval_code, echo = FALSE}
 cat("\n# Python Code ", fill=TRUE)
 ```
 
 
-```{r, results="asis", eval = TRUE, echo = FALSE}
-cat("\\textcolor{blue}{Instructions ")
-cat("\\newline ")  
-cat("If not already available, install Python and the packages defined further below. We recommend the Anaconda distribution (https://www.anaconda.com/) and Spyder as the IDE. Copy the code below, paste it carefully in a new Python file within Spyder. For a seamless copy \\& paste process, open the PDF report in a browser. Change the path to your data in the line} ")
+```{r, results="asis", eval = eval_code, echo = FALSE}
+cat("If not already available, install Python and the packages defined further below. We recommend the Anaconda distribution (https://www.anaconda.com/) and Spyder as the IDE. Copy the code below, paste it carefully in a new Python file within Spyder. For a seamless copy \\& paste process, open the PDF report in a browser. Change the path to your data in the line ")
 cat("`filepath = ...` ") 
-cat("\\textcolor{blue}{Run the code. Explore the results. }")
+cat("Run the code. Explore the results. ")
 ```
 
-
-<style>
-pre.whites {
-    background-color: #ffffff !important;
-}
-</style>
 
 ```{whites, eval = FALSE, echo = eval_code}
 # Import required libraries
@@ -78,22 +86,27 @@ pd.set_option('display.width', 1000)
 ```
 
 
-```{r, results="asis", eval = TRUE, echo = FALSE}
-cat("\\# `Define the path to your data (please remark the forward slash)`")
-cat("\\newline ")  
+```{r, results="asis", eval = eval_code, echo = FALSE}
+cat("`# Define the path to your data (please remark the forward slash)`")
+cat("<br>")  
 cat("`filepath = ")
 cat(paste0("\"C:/",params$filename[1],"\"`"))
 ```
 
-```{r, results="asis", eval = TRUE, echo = FALSE}
+```{r, results="asis", eval = eval_code, echo = FALSE}
 if (params$decimal == "auto"){
-  cat("\\# `Upload the data`")
-  cat("\\newline ")  
+  cat("`# Upload the data`")
+  cat("<br>")    
+  
+  # First read with dot 
   datainput1 <- fread(params$filename$datapath, header = "auto", sep = "auto", dec=".", encoding = "unknown", data.table = FALSE, na.strings = "")
   
-   # Probably comma as decimal
+  # Define colnames to finally decide for decimal character  
   colnames <- sapply(datainput1, function(col) is.numeric(col) & Negate(is.integer)(col))
+  
   if (sum(colnames) == 0L){
+    
+    # Probably comma as decimal
     cat(paste0("`df = pd.read_csv(filepath, sep = None, decimal =\",\",  keep_default_na = False, na_values = \'\')`"))
     
   } else {
@@ -108,5 +121,5 @@ if (params$decimal == "auto"){
 }
 ```
 
-```{r child = 'report_code_common.Rmd', eval = FALSE}
+```{r child = 'report_code_common.Rmd', eval = eval_code}
 ```

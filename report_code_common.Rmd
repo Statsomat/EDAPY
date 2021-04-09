@@ -1,542 +1,122 @@
 ---
-title: "Descriptive Statistics"
+title: "Exploratory Data Analysis with Python"
 ---
 
-```{whites, eval=FALSE, echo = eval_rows}
-# Drop empty rows
-rowsums <- data.frame(sapply(df,is.na))
-rows_drop <- (which(rowSums(rowsums) == ncol(df)))
-df <- df[-rows_drop, ,drop=FALSE]
+
+```{r, results="asis", eval = eval_num, echo = FALSE}
+cat("<p style=\"background-color:#ffffff !important\">")
+cat("`# Column indices of selected continuous variables:` ")
+cat("<br>")  
+indices <- which(colnames(df_code) %in% colnames(df_num))
+indices <- indices-1
+cat("`cols_continuous = ")
+cat(paste0("[", paste(indices, collapse = ','), "]`"))
+cat("</p>")
 ```
 
-```{r, results="asis", eval=eval_code, echo=FALSE}
-eval_num <- FALSE
-eval_numcol <- FALSE
-if (exists("df_num")){
-  if (ncol(df_num)>0){
-     indices <- which(colnames(df_code) %in% colnames(df_num))
-     cat("\\# `Column names of selected continuous variables`")
-     cat("\\newline ")
-     cat("`colnames_continuous = ")
-     cat(paste0("c(", paste(indices, collapse=','), ")`"))
-     eval_num <- TRUE
-     eval_numcol <- (ncol(df_num)>1)
-  }
-}
-```
-
-```{whites, eval=FALSE, echo = eval_num}
+```{whites, eval = FALSE, echo = eval_num}
 # Data frame of the continuous variables
-df_num <- df[ ,colnames_continuous, drop=FALSE]
+df_num = df.iloc[:,cols_continuous]
+```
+
+```{r, results="asis", eval = eval_factor, echo = FALSE}
+cat("<span style=\"background-color:white\">")
+cat("`# Column indices of selected discrete variables:` ")
+cat("<br>")  
+indices <- which(colnames(df_code) %in% colnames(df_factor))
+indices <- indices - 1
+cat("`cols_discrete = ")
+cat(paste0("[", paste(indices, collapse = ','), "]`"))
+cat("</span>")
+```
+
+```{whites, eval = FALSE, echo = eval_factor}
+# Data frame of the discrete variables
+df_cat = df.iloc[:,cols_discrete]
+```
+
+```{whites, eval = FALSE, echo = eval_num}
+# Continuous variables, descriptive statistics
+df_num.sort_index(axis=1, inplace=True)
+df_num_stats = df_num.describe()
+df_num_stats = df_num_stats.transpose()
+df_num_stats.drop(columns=['25%', '75%'], inplace=True)
+df_num_stats.rename(columns={"count": "N Valid", "mean": "Mean", "50%": "Median", 
+                             "std": "SD", "min": "Min", "max": "Max"}, inplace=True)
+df_num_stats["N Obs"] = df_num.shape[0]
+df_num_stats["N Missing"] = df_num.isna().sum()
+df_num_stats["% Complete"] = (df_num_stats["N Valid"] / df_num_stats["N Obs"])*100
+df_num_stats["N Unique"] = df_num.nunique(dropna=True)
+df_num_stats["MAD"] = df_num.mad(axis=0)
+df_num_stats["Skewness"] = df_num.skew(axis=0)
+df_num_stats["Kurtosis"] = df_num.kurtosis(axis=0)
+df_num_stats.loc[df_num_stats["Min"]>0,"CV"] = df_num_stats["SD"] / df_num_stats["Mean"]
+df_num_stats = df_num_stats.round(2)
+df_num_stats.loc[df_num_stats["Min"]<=0,"CV"] = ""
+
+## Reorder columns to be similar to the output of the R app 
+df_num_stats = df_num_stats.reindex(columns=["N Obs", "N Missing", "N Valid", 
+                                             "% Complete", "N Unique", "Mean", 
+                                             "SD", "Median", "MAD", "Min", "Max", 
+                                             "Skewness", "Kurtosis", "CV"]) 
+
+## Sort by variable name
+df_num_stats.sort_index(inplace=True)
+
+## Restrict size of characters of index 
+cnames = np.array(df_num_stats.index).astype('str')
+csize = min(np.max(np.char.str_len(cnames)),25)
+df_num_stats.index = list(map(lambda x: x[0:csize], cnames))
+
+## Output
+print(tabulate(df_num_stats, headers='keys', tablefmt="simple"))
 ```
 
 
-```{r, results="asis", eval=eval_code, echo=FALSE}
-eval_cat <- FALSE
-eval_catcol <- FALSE
-if (exists("df_factor")){
-  if (ncol(df_factor)>0){
-     indices <- which(colnames(df_code) %in% colnames(df_factor))
-     cat("\\# `Column names of selected categorical variables`")
-     cat("\\newline ")
-     cat("`colnames_categorical = ")
-     cat(paste0("c(", paste(indices, collapse=','), ")`"))
-     eval_cat <- TRUE
-     eval_catcol <- (ncol(df_factor)>1)
-  }
-}
-```
+```{whites, eval = FALSE, echo = eval_num}
+# Function for Histogram
+def histo(ax, var, ylabel, xsize):
+    sns.histplot(df_num.iloc[:,var], ax = ax, stat='density', 
+                 color = '#2fa42d', kde = True, 
+                 bins = len(np.unique(df_num.iloc[:,var]))//2)
+    minvar = df_num.iloc[:,var].min()
+    maxvar = df_num.iloc[:,var].max()
+    xaxis = np.arange(minvar, maxvar, 0.001)
+    fit_normal = stats.norm.pdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
+    ax.plot(xaxis, fit_normal, lw = 1, color = '#396e9f')
+    ax.tick_params(axis='both', which='major', labelsize=10)
+    ax.set_xlabel(df_num.columns[var], fontsize=xsize)
+    ax.set_ylabel(ylabel)
+    title = "Histogram of " + str(df_num.columns[var])
+    ax.set_title(title)
 
-```{whites, eval=FALSE, echo = eval_cat}
-# Data frame of the categorical variables
-df_factor <- df[ ,colnames_categorical, drop=FALSE]
-```
-
-```{whites, eval=FALSE, echo = eval_num}
-
-# Continuous variables
-## Descriptive statistics
-
-### Take over summary from psych package and add new stats 
-stats_new <- psych::describe(df_num)
-
-### Drop some stats which we do not need  
-stats_new <- as.data.frame(stats_new)
-stats_new <- stats_new[c(-1,-6,-10,-13)]
-
-### Add new stats
-stats_new$Variable <- colnames(df_num)
-stats_new$ntotal <- nrow(df_num)
-
-### Missings
-stats_new$miss <- sapply(df_num, function(col) sum(is.na(col)))
-
-### Complete rate
-stats_new$complete <- sapply(df_num, function(col) (1-(sum(is.na(col)) / nrow(df_num)))*100)
-  
-### N Unique
-stats_new$N_Unique <- sapply(df_num, function(col) length(unique(na.omit(col))))
-
-### CV
-stats_new$CV <- sapply(df_num, function(col) {
-  ifelse(any(col< 0, na.rm=TRUE), "-", round((sd(col, na.rm=TRUE) / mean(col, na.rm=TRUE)),2))
-  })
-
-### Reorder columns 
-stats_new <- stats_new[,c(10,11,12,1,13,14,2:9,15)]
-
-### Column names 
-colnames(stats_new) <- c("Variable", "N Obs", "N Missing", "N Valid", "% Complete", "N Unique", "Mean", 
-                         "SD", "Median", "MAD", "MIN", "MAX", "Skewness", "Kurtosis", "CV")
-
-### Order by variable name
-stats_new <- stats_new[order(stats_new$Variable),]
-
-### Output
-knitr::kable(stats_new, digits=2, row.names = FALSE, format="simple") 
-```
-
-```{whites, eval=FALSE, echo = eval_num}
-# Continuous variables
-## Descriptive graphics: Histograms One Per Page
-
-### Order by variable name 
-df_num_order <- df_num[,order(colnames(df_num)),drop=FALSE] 
-
-### Function to plot histogram for each variable 
-single_hist <- function(x, main = "Histogram", 
-                    ylab="Relative Frequency", xlab=NULL, freq=FALSE, bcol="#2fa42d",
-                    dcol=c("#396e9f","#396e9f"), dlty=c("dotted", "solid"), 
-                    breaks=21) {
-
-  h <-  hist(x, plot=FALSE, breaks=breaks)
-  m <- mean(x, na.rm=TRUE)
-  s <- sd(x, na.rm=TRUE)
-  d <- density(x, na.rm=TRUE)
-  
-  # Set nice x and y axis limits 
-  xlims <- pretty(c(floor(h$breaks[1]),ceiling(last(h$breaks))))
-  ymax <- max(h$density)
-  dmax <- max(d$y)
-  ymax <- max(ymax,dmax)
-  
-  # Plots 
-  plot(h, freq=freq, ylim=c(0, ymax*1.2), ylab=ylab, xlab=xlab, 
-       main=main, col=bcol,  xlim = c(min(xlims), max(xlims)))
-  lines(d, lty=dlty[1], col=dcol[1])
-  curve(dnorm(x,m,s), add=TRUE, lty=dlty[2], col=dcol[2])
-  
-}
-
-
-### Loop over variables
-for (i in 1:ncol(df_num)){
-  single_hist(df_num_order[,i], main = paste("Histogram of ", colnames(df_num_order[i])))
-}
+# Large Histogram Plots
+sns.set_style()
+for var in range(df_num.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  histo(ax, var, "Density", 25)
+  plt.show()
 ```
 
 
-```{whites, eval=FALSE, echo = eval_numcol}
-# Continuous variables
-## Descriptive graphics: Histograms Summary
-k <- ceiling(ncol(df_num)/20)-1
-for (i in 0:k){
-  m <- 20*i+1
-  n <- min(20*(i+1),ncol(df_num))
-  multi.hist(df_num_order[,m:n], dcol=c("#396e9f","#396e9f"), 
-             bcol= "#2fa42d", 
-             dlty=c("dotted", "solid"), 
-             main = colnames(df_num_order[,m:n])) 
-}
-```
+```{whites, eval = FALSE, echo = eval_num2}
+# Function little helper to message the axs list to have correct length
+def trim_axs(axs, N):
+    axs = axs.flat
+    for ax in axs[N:]:
+        ax.remove()
+    return axs[:N]
 
-
-```{whites, eval=FALSE, echo = eval_num}
-# Continuous variables
-## Descriptive graphics: Box-Plot One Per Page
-
-### Loop over variables
-for (i in 1:ncol(df_num)){
-  boxplot(df_num_order[,c(i)], col = "#2fa42d", 
-       main = paste("Boxplot of",colnames(df_num_order[i])),
-       xlab=paste(colnames(df_num_order[i])), horizontal = TRUE)
-}
-```
-
-
-```{whites, eval=FALSE, echo = eval_numcol}
-# Continuous variables
-## Descriptive graphics: Box-Plots Summary
-
-### Set graphical parameters 
-par(mfrow=c(ceiling(sqrt(length(df_num_order))), ceiling(sqrt(length(df_num_order)))), 
-    mar=c(1.5,1,2,1), oma=c(1,1,1,1))
-
-### Loop over variables   
-for(i in 1:ncol(df_num)){
-  boxplot(df_num_order[,c(i)], col = "#2fa42d", main = colnames(df_num_order[i]), 
-          xlab=paste(colnames(df_num_order[i])), xaxt="n", horizontal = TRUE)
-} 
-
-### Restore graphical parameters 
-par(mfrow=c(1,1))
-```
-
-```{whites, eval=FALSE, echo = eval_num}
-# Continuous variables
-## Descriptive graphics: ECDF Plots One Per Page
-
-### Loop over variables  
-for (i in 1:ncol(df_num)){
-  
-  data <- as.data.frame(df_num_order[,c(i)])
-  colnames(data) <- "variable"
-
-  # Plot ECDF
-  step_function <- ecdf(data$variable)
-  plot(step_function,
-      main=paste("ECDF Plot of", colnames(df_num_order[i])),
-      xlab=colnames(df_num_order[i]), ylab="ECDF",
-      cex=0.7, col="#2fa42d", do.points=TRUE)
-  
-  # Plot CDF of normal distribution 
-  data_mean<- mean(data$variable, na.rm=TRUE)
-  data_sd<- sd(data$variable, na.rm=TRUE)
-  curve(pnorm(x, data_mean,data_sd),
-        from=qnorm(0.0001, mean=data_mean, sd=data_sd), 
-        to=qnorm(0.9999, mean=data_mean, sd=data_sd), 
-        add=TRUE, col="#396e9f", lwd=2)
-}
-```
-
-
-
-```{whites, eval=FALSE, echo = eval_numcol}
-# Continuous variables
-## Graphics: ECDF Plots Summary
-
-### ECDF function 
-ecdf_plot <- function(i){
-
-  data <- as.data.frame(df_num_order[,c(i)])
-  colnames(data)<-"variable"
-  
-  # Plot ECDF
-  step_function <- ecdf(data$variable)
-  ecdf_plot <- plot(step_function,
-                  main = colnames(df_num_order[i]),
-                  xlab = colnames(df_num_order[i]), ylab = "ECDF",
-                  cex = 0.7, col="#2fa42d", do.points = FALSE)
-  
-  # Plot CDF of normal distribution
-  data_mean <- mean(data$variable, na.rm=TRUE)
-  data_sd <- sd(data$variable, na.rm=TRUE)
-  curve(pnorm(x, data_mean,data_sd),
-        from = qnorm(0.0001, mean = data_mean, sd = data_sd), 
-        to = qnorm(0.9999, mean = data_mean, sd = data_sd), 
-        add = TRUE, col="#396e9f", lwd=0.5,pch=1)
-}
-
-
-### Set graphical parameters 
-par(mfrow=c(ceiling(sqrt(length(df_num_order))), ceiling(sqrt(length(df_num_order)))), 
-    mar=c(1.5,1,2,1), oma=c(1,1,1,1))
-
-### Loop over variables  
-for(i in 1:ncol(df_num)) ecdf_plot(i)
-
-### Restore graphical parameters 
-par(mfrow=c(1,1))
-```
-
-```{whites, eval=FALSE, echo = eval_num}
-# Continuous variables
-## Graphics: QQ Plots One Per Page
-
-### Loop over variables 
-for (i in 1:ncol(df_num)){
-  data <- as.data.frame(df_num_order[,c(i)])
-  colnames(data) <-"variable"
-  qqPlot(data$variable, ylab = colnames(df_num_order)[c(i)], 
-         main = paste("Q-Q-Plot of", colnames(df_num_order[i])),
-         xlab = "Normal Quantiles", grid = FALSE,
-         col = "#2fa42d", col.lines = "#396e9f", envelope = FALSE, id=FALSE,
-         cex=0.7, pch=19)
-}
-```
-
-
-```{whites, eval=FALSE, echo = eval_numcol}
-# Continuous variables
-## Graphics: QQ Plots Summary
-
-### QQ Plot function 
-qq_plot <- function(i){
-  data <- as.data.frame(df_num_order[,c(i)])
-  colnames(data) <-"variable"
-  qqPlot(data$variable, ylab = colnames(df_num_order)[c(i)], 
-         main = colnames(df_num_order[c(i)]),
-         col = "#2fa42d", col.lines = "#396e9f", envelope = FALSE, grid=FALSE,
-         id=FALSE, cex=1, lwd=1)
-}
-
-### Set graphical parameters 
-par(mfrow=c(ceiling(sqrt(length(df_num_order))), ceiling(sqrt(length(df_num_order)))), 
-    mar=c(1.5,1,2,1), oma=c(1,1,1,1))
-
-### Loop over variables   
-for(i in 1:ncol(df_num)) qq_plot(i)
-
-### Restore graphical parameters 
-par(mfrow=c(1,1))
-```
-
-
-```{whites, eval=FALSE, echo = eval_cat}
-# Categorical variables 
-## Descriptive statistics: Totals 
-
-### Totals statistics
-miss <- sapply(df_factor, function(col) sum(is.na(col)))
-complete <- sapply(df_factor, function(col) (1-(sum(is.na(col)) / nrow(df_factor)))*100) 
-complete <- round(complete,3)
-totals <- data.frame(miss, complete)
-totals$Variable <- rownames(totals)
-totals$ntotal <- nrow(df_factor)
-totals$valid <- totals$ntotal - totals$miss
-totals$N_Unique <- sapply(df_factor, function(col) length(unique(col)))
-totals <- totals[,c(3,4,1,5,2,6)]
-totals <- totals[order(totals$Variable),]
-colnames(totals) <- c("Variable", "N Obs", "N Missing", "N Valid", "% Complete","N Unique")
-
-### Output 
-kable(totals, digits=2, row.names = FALSE, format="simple") 
-```
-
-```{whites, eval=FALSE, echo = eval_cat}
-# Categorical variables 
-## Descriptive statistics: Frequencies
-
-### Function stats per variable
-discrete <- function(i){
-  
-  # Calculate individual statistics
-  count <- table(df_factor[,i], useNA="always")
-  perc <- as.data.frame(prop.table(count))
-  perc$Percent <- perc$Freq*100
-  perc$Freq <- NULL
-  
-  # Merge to one dataframe
-  freq <- merge(count, perc, by="Var1")
-  freq$Variable <- rep(colnames(df_factor)[i],nrow(freq))
-  freq <- freq[,c(4,1,2,3)]
-  colnames(freq) <- c("Variable", "Category","Frequency", "Percent")
-  
-  # Rename missing category
-  if(length(is.na(freq$Category))>0){
-    levels(freq$Category) <- c(levels(freq$Category),"Missing")
-    freq$Category[is.na(freq$Category)] <- "Missing"
-  }
-  
-  # Sort 
-  freq_order <- freq[order(-freq[,4],freq[,2]),]
-  
-  # Add category "All other values" in case of more than 20 categories
-  min <- min(20, length(unique(df_factor[,i])))
-  if(min==20){
-    freq_order$Category <- as.character(freq_order$Category)
-    freq_order <- rbind(freq_order[1:20,], 
-                        c(colnames(df_factor)[i], as.character("****All Other Values****"),
-                          sum(freq_order$Frequency[-c(1:20)]), sum(freq_order$Percent[-c(1:20)])))
-  } else {
-    freq_order <- freq_order[1:min,]
-  }
-  return(freq_order)
-}
-
-### Loop over variables
-cat_table <- discrete(1)
-for (i in 1:ncol(df_factor)){
-  if (i>1){
-    cat_i <- discrete(i)
-    cat_table <- rbind(cat_table, cat_i)
-  }
-}
-
-### Sort by variable name 
-cat_table <- cat_table[order(cat_table$Variable),]
-cat_table$Percent <- round(as.numeric(cat_table$Percent),2)
-
-### Output  
-kable(cat_table, digits=2, row.names = FALSE, format="simple") 
-```
-
-
-```{whites, eval=FALSE, echo = eval_cat}
-# Categorical variables 
-## Descriptive graphics: Bar-Plots One Per Page
-
-### Data frame sorted by column name 
-df_factor_order <- df_factor[,order(colnames(df_factor)), drop=FALSE]  
-
-### Loop over variables 
-for (i in 1:ncol(df_factor)){
-  counts <- table(df_factor_order[i], useNA = "ifany")
-  names(counts)[is.na(names(counts))] <- "Missing"
-  counts <- counts[order(counts)] 
-  
-  # Plot by case (e.g. category names length)
-  if (any(nchar(names(counts), type = "chars") >= 11) || length(counts) > 12){
-    
-     if(length(counts) > 40){
-        # Bar-Plot with suppressed category names 
-        par(mar = c(6,6,4.1, 2.1), mgp = c(3, 1, 0))
-        barplot(counts, col = "#2fa42d", main = paste("Barplot of ", colnames(df_factor_order[i])), xaxt="n",
-                ylab = "Frequency", cex.names = 0.6, las = 2, xlab = colnames(df_factor_order[i]),
-                ylim = range(pretty(c(0,counts))))
-        
-    
-      } else {
-     # Bar-Plot with shortened category names          
-       par(mar = c(8, 8, 4.1, 2.1), mgp = c(6, 1, 0))
-       names(counts) <- substr(names(counts), 1, 15)
-       barplot(counts, col = "#2fa42d", main = paste("Barplot of ", colnames(df_factor_order[i])), ylab = "Frequency", 
-               cex.names = 0.65, xlab= colnames(df_factor_order[i]), las=2, ylim=range(pretty(c(0,counts))))
-     
-      }
-   
-  } else {
-   # Bar-Plot with full-length names
-    par(mar = c(6,6, 4.1, 2.1), mgp = c(5, 1, 0))
-    barplot(counts, col = "#2fa42d", main = paste("Barplot of ", colnames(df_factor_order[i])), ylab = "Frequency", 
-            cex.names = 0.7, ylim=range(pretty(c(0,counts))), xlab= colnames(df_factor_order[i]))
-   }
-}
-```
-
-
-```{whites, eval=FALSE, echo = eval_catcol}
-# Categorical variables 
-## Descriptive graphics: Bar-Plots Summary
-
-### Function for Bar-Plot per variable 
-plot_bar <- function(i){
-  counts <- table(df_factor_order[i], useNA = "ifany")
-  names(counts)[is.na(names(counts))] <- "Missing"
-  names(counts)[names(counts)=="NA"] <- "Missing"
-  counts <- counts[order(counts)]
-  barplot(counts, col = "#2fa42d", main = colnames(df_factor_order[i]),
-          ylab = "Frequency",  xaxt="n", ylim=range(pretty(c(0,counts))))
-}
-
-### Set graphical parameters 
-par(mfrow=c(ceiling(sqrt(length(df_factor))), ceiling(sqrt(length(df_factor)))), 
-    mar=c(1.5,1,2,1), oma= c(1,1,1,1))
-  
-### Loop over variables 
-for(i in 1:ncol(df_factor)) plot_bar(i)
-
-### Restore graphical parameters 
-par(mfrow=c(1,1))
-```
-
-
-
-```{whites, eval=FALSE, echo = eval_cat}
-# Categorical variables 
-## Descriptive graphics: Pie-Plots One Per Page 
-
-### Function to create frequency table for each variable 
-freqtable <- function(col){
-  
-  # Replace NA with "Missing"
-  col[is.na(col)] <- "Missing"
-  
-  # Create table with frequencies
-  pie_table_unsorted <- as.data.frame(table(col)) 
-  pie_table_sorted <- pie_table_unsorted[order(pie_table_unsorted$Freq, decreasing=TRUE),]
-  colnames(pie_table_sorted) <- c("Category", "Frequency")
-  
-  # If more than 20 categories: summarize the smallest categories to one category
-  if (nrow(pie_table_sorted)>20){
-    pie_table_sorted$Category <- as.character(pie_table_sorted$Category)
-    pie_table_summarized <- rbind(pie_table_sorted[c(1:20),],
-                                  c(as.character("All Other Values"), 
-                                    sum(pie_table_sorted$Frequency[-c(1:20)])))
-    pie_table_sorted <- pie_table_summarized
-  }
-  pie_table_sorted$RelFreq <- as.numeric(pie_table_sorted$Frequency) / length(col)
-  return(pie_table_sorted)
-}
-
-### Plot function
-plot_pie <- function(table, title, title_size, legend_pos){
-  # Direction of the legend 
-  if (max(nchar(as.character(table[,1])))>15){ 
-    legend = "vertical"
-  } else {
-    legend = "horizontal"
-  }
-  plot <-
-    ggplot(table, aes(x = "", y = RelFreq, 
-                                 fill = reorder(Category, RelFreq))) +
-    guides(fill = guide_legend(title="", reverse = FALSE, direction = legend)) +
-    ggtitle(title) +
-    geom_col() +
-    geom_text(aes(label = scales::percent(RelFreq,accuracy = 0.01)),  
-              position = position_stack(vjust = 0.5), size = 2) +
-    coord_polar("y", start = 0) +
-    theme(axis.title.x = element_blank(),axis.title.y = element_blank(), 
-          axis.ticks = element_blank(), panel.grid = element_blank(), 
-          axis.text = element_blank(), legend.position = legend_pos,
-          panel.background = element_blank(), plot.title = title_size)
-  return(plot)
-}
-
-### Loop over variables
-for(i in 1:ncol(df_factor)){
-  table <- freqtable(df_factor_order[,i])
-  title <- paste("Pie Chart of ", colnames(df_factor_order[i]))
-  title_size <- element_text(hjust = 0.5, face = "bold")
-  legend_pos <- "right"
-  print(plot_pie(table=table, title=title, title_size=title_size, legend_pos=legend_pos))
-}
-
-```
-
-
-```{whites, eval=FALSE, echo = eval_catcol}
-# Categorical variables 
-## Descriptive graphics: Pie-Plots Summary
-
-### Save variable plots in a list
-plots <- list()
-for (i in 1:ncol(df_factor)){
-  title <- substr(colnames(df_factor_order[i]), 1, 19)
-  title_size <- element_text(size = 30 / min(25, ceiling(sqrt(ncol(df_factor)))),
-                             face = "bold", hjust = 0.5)
-  legend_pos <- "none"
-  table <- freqtable(df_factor_order[,i])
-  plots[[i]] <- plot_pie(table=table, title=title, title_size=title_size, legend_pos=legend_pos)
-}
-
-
-### Summary Plot
-grid.arrange(grobs = plots, ncol = ceiling(sqrt(ncol(df_factor_order))))
-
-```
-
-
-```{r, results="asis", eval=eval_code}
-cat("\\newpage ")
-cat("\n# R Code License", fill=TRUE)
-cat("In the report included R programming code, the \"Software\" is under the MIT license.")
-cat("\\newline ")
-cat("Copyright 2021 Denise Welsch")
-cat("\\newline ")
-cat("Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:")
-cat("\\newline ")
-cat("THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.")
+# Summary Histogram Plots
+nrow = math.ceil(np.sqrt(df_num.shape[1]))
+ncol = math.ceil(df_num.shape[1] / nrow)
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_num.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
+   histo(ax, var, "", 8)
+plt.show()
 ```
 
 
