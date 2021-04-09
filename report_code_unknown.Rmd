@@ -4,8 +4,7 @@ author: "Statsomat.com"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: 
   html_document:
-    highlight: NULL
-classoption: landscape
+    toc: true
 params:
   data: NA
   filename: NA
@@ -14,52 +13,33 @@ params:
   enc_guessed: NA
   vars1: NA
   continuity: NA
-header-includes:
-   - \usepackage{xcolor}
-   - \setmainfont[BoldFont=FiraSans-Bold, Extension=.otf]{FiraSans-Regular}
-   - \usepackage{booktabs}
-   - \usepackage{longtable}
-   - \usepackage{float}
 ---
 
 
+<style>
+pre.whites {
+    background-color: #F8F8F8 !important;
+    border: 0;
+}
+</style>
+
+<style>
+body {background-color: #F8F8F8;}
+</style>
+
 ```{r child = 'report_kernel.Rmd', include = FALSE}
 ```
-
 
 ```{r include=FALSE}
 if (exists("eval")) eval_code <- eval else eval_code <- FALSE
 ```
 
-\pagebreak
- 
-\pagestyle{empty} 
-
-
-<style>
-pre.whites {
-    background-color: #ffffff !important;
-    border: 0;
-}
-</style>
-
-
-```{css, echo=FALSE}
-.evals {
-  background-color: lightpink;
-  border: 3px solid red;
-  font-weight: bold;
-}
-```
-
-
 ```{r, results="asis", eval = eval_code, echo = FALSE}
 cat("\n# Python Code ", fill=TRUE)
 ```
 
-
 ```{r, results="asis", eval = eval_code, echo = FALSE}
-cat("If not already available, install Python and the packages defined further below. We recommend the Anaconda distribution (https://www.anaconda.com/) and Spyder as the IDE. Copy the code below, paste it carefully in a new Python file within Spyder. For a seamless copy \\& paste process, open the PDF report in a browser. Change the path to your data in the line ")
+cat("If not already available, install Python and the packages defined further below. We recommend the Anaconda distribution (https://www.anaconda.com/) and Spyder as the IDE. Copy the code below, paste it in a new Python file. Change the path to your data in the line ")
 cat("`filepath = ...` ") 
 cat("Run the code. Explore the results. ")
 ```

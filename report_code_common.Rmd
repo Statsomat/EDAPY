@@ -2,16 +2,13 @@
 title: "Exploratory Data Analysis with Python"
 ---
 
-
 ```{r, results="asis", eval = eval_num, echo = FALSE}
-cat("<p style=\"background-color:#ffffff !important\">")
 cat("`# Column indices of selected continuous variables:` ")
 cat("<br>")  
 indices <- which(colnames(df_code) %in% colnames(df_num))
 indices <- indices-1
 cat("`cols_continuous = ")
 cat(paste0("[", paste(indices, collapse = ','), "]`"))
-cat("</p>")
 ```
 
 ```{whites, eval = FALSE, echo = eval_num}
