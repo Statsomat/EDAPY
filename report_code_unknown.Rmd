@@ -18,14 +18,31 @@ params:
 
 <style>
 pre.whites {
-    background-color: #F8F8F8 !important;
+    background-color: #FFFFFF !important;
     border: 0;
 }
 </style>
 
 <style>
-body {background-color: #F8F8F8;}
+    pre {
+        border: 0;
+    }
 </style>
+
+
+```{r include=FALSE}
+knitr::opts_chunk$set(comment = NA)
+```
+
+```{r, echo = FALSE}
+# Style asis chunks
+codechunk <- function(text, style=list(color="white")){
+  cat(
+    sprintf('<pre><code class="w" style="%s">%s</code></pre>', 
+            do.call(function(...) sprintf(paste(c(names(style), ""), collapse = ":%s;"), ...), unname(style)), 
+            code))
+}
+```
 
 ```{r child = 'report_kernel.Rmd', include = FALSE}
 ```
@@ -67,16 +84,17 @@ pd.set_option('display.width', 1000)
 
 
 ```{r, results="asis", eval = eval_code, echo = FALSE}
-cat("`# Define the path to your data (please remark the forward slash)`")
-cat("<br>")  
-cat("`filepath = ")
-cat(paste0("\"C:/",params$filename[1],"\"`"))
+code1 <- "# Define the path to your data (please remark the forward slash
+filepath = "
+code <- paste0(code1, paste0("\"C:/",params$filename[1],"\""))
+codechunk(code, style=list("border"="0", "background-color"="#FFFFFF"))
 ```
 
 ```{r, results="asis", eval = eval_code, echo = FALSE}
+text1 <- "# Upload the data
+df = "
+
 if (params$decimal == "auto"){
-  cat("`# Upload the data`")
-  cat("<br>")    
   
   # First read with dot 
   datainput1 <- fread(params$filename$datapath, header = "auto", sep = "auto", dec=".", encoding = "unknown", data.table = FALSE, na.strings = "")
@@ -87,18 +105,22 @@ if (params$decimal == "auto"){
   if (sum(colnames) == 0L){
     
     # Probably comma as decimal
-    cat(paste0("`df = pd.read_csv(filepath, sep = None, decimal =\",\",  keep_default_na = False, na_values = \'\')`"))
+    text2 <- paste0("pd.read_csv(filepath, sep = None, decimal =\",\",  keep_default_na = False, na_values = \'\')")
     
   } else {
-    cat(paste0("`df = pd.read_csv(filepath, sep = None, decimal =\".\",  keep_default_na = False, na_values = \'\')`"))
+    
+    # Probably dot as decimal 
+     text2 <- paste0("pd.read_csv(filepath, sep = None, decimal =\".\",  keep_default_na = False, na_values = \'\')")
   }
   
 } else {
-  cat("\\# `Upload the data`")
-  cat("\\newline ") 
+
+  # User selection for decimal
   cat(paste0("`df = pd.read_csv(filepath, sep = None, decimal = \"", params$decimal,"\",  keep_default_na = False, na_values = \'\')`"))
-  
 }
+
+code <- paste0(text1,text2)
+codechunk(code, style=list("border"="0", "background-color"="#FFFFFF"))
 ```
 
 ```{r child = 'report_code_common.Rmd', eval = eval_code}

@@ -2,13 +2,13 @@
 title: "Exploratory Data Analysis with Python"
 ---
 
-```{r, results="asis", eval = eval_num, echo = FALSE}
-cat("`# Column indices of selected continuous variables:` ")
-cat("<br>")  
+```{r,  results="asis", eval = eval_num, echo = FALSE}
+code1 <- "# Column indices of selected continuous variables:
+cols_continuous = ["
 indices <- which(colnames(df_code) %in% colnames(df_num))
 indices <- indices-1
-cat("`cols_continuous = ")
-cat(paste0("[", paste(indices, collapse = ','), "]`"))
+code <- paste0(code1,paste0(paste(indices, collapse = ','), "]"))
+codechunk(code, style=list("border"="0", "background-color"="#FFFFFF"))
 ```
 
 ```{whites, eval = FALSE, echo = eval_num}
