@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Data Analysis with Python"
+title: "Exploratory Data Analysis (EDA)"
 author: "Statsomat.com"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: 
@@ -15,16 +15,9 @@ params:
   continuity: NA
 ---
 
-
-<style>
-pre.whites {
-    background-color: #FFFFFF !important;
-    border: 0;
-}
-</style>
-
 <style>
     pre {
+        background-color: #FFFFFF !important;
         border: 0;
     }
 </style>
@@ -62,7 +55,7 @@ cat("Run the code. Explore the results. ")
 ```
 
 
-```{whites, eval = FALSE, echo = eval_code}
+```{r, eval = FALSE, echo = eval_code}
 # Import required libraries
 import numpy as np
 import pandas as pd
@@ -75,7 +68,7 @@ from tabulate import tabulate
 ```
 
 
-```{whites, eval = FALSE, echo = eval_code}
+```{r, eval = FALSE, echo = eval_code}
 # Set console printing options 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 20)
@@ -84,10 +77,10 @@ pd.set_option('display.width', 1000)
 
 
 ```{r, results="asis", eval = eval_code, echo = FALSE}
-code1 <- "# Define the path to your data (please remark the forward slash
+code1 <- "# Define the path to your data (remark the forward slash)
 filepath = "
 code <- paste0(code1, paste0("\"C:/",params$filename[1],"\""))
-codechunk(code, style=list("border"="0", "background-color"="#FFFFFF"))
+codechunk(code, style=list("background-color"="#FFFFFF"))
 ```
 
 ```{r, results="asis", eval = eval_code, echo = FALSE}
@@ -120,7 +113,7 @@ if (params$decimal == "auto"){
 }
 
 code <- paste0(text1,text2)
-codechunk(code, style=list("border"="0", "background-color"="#FFFFFF"))
+codechunk(code, style=list("background-color"="#FFFFFF"))
 ```
 
 ```{r child = 'report_code_common.Rmd', eval = eval_code}

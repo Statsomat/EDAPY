@@ -137,6 +137,8 @@ shinyUI(fluidPage(
                       
                       h3("Select Variables (max 25)"),
                       
+                      h5("Olny blanks as missing values"),
+                      
                       uiOutput("selection1")
                     
             ),
@@ -144,11 +146,10 @@ shinyUI(fluidPage(
            
            wellPanel(style = "background: #ff9900", align="center", 
                      
-                     h3("Generate the Report"),
+                     h3("Click to Generate Results"),
                      
-                     radioButtons('rcode', 'Include R Code', c('Yes','No'), inline = TRUE),
+                     radioButtons('rcode', '', c('Data Analysis Report (PDF)', 'Python Code (HTML)'), inline = TRUE),
                      
-                     h5("Click the button to generate the report"),
                      
                      actionButton("generate", "", style="
                                     height:145px;
@@ -169,9 +170,7 @@ shinyUI(fluidPage(
            
            wellPanel(style = "background: #ff9900", align="center", 
                      
-                     h3("Download the Report"),
-                     
-                     h5("Click the button to download the report"),
+                     h3("Click to Download"),
                      
                      downloadButton("download", "", style="
                                     height:145px;

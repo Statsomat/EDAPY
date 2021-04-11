@@ -263,7 +263,7 @@ function(input, output, session) {
           
         }
       
-        if (input$rcode == "No"){
+        if (input$rcode == "Data Analysis Report (PDF)"){
           
           tmp_file <- render('report.Rmd', pdf_document(latex_engine = "xelatex"),
                         params = params,
@@ -283,7 +283,7 @@ function(input, output, session) {
     
       })
       
-      showNotification("Now you can download the report.", duration=20)
+      showNotification("Now you can download the file.", duration=20)
       
     },
     
@@ -308,7 +308,7 @@ function(input, output, session) {
     
     filename = function() {
       
-      if (input$rcode == "No"){
+      if (input$rcode == "Data Analysis Report (PDF)"){
         paste('MyReport',sep = '.','pdf')
       } else {
         paste('MyCode',sep = '.','html')

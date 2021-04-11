@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Data Analysis with Python"
+title: "Exploratory Data Analysis (EDA)"
 author: "Statsomat.com"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:

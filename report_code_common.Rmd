@@ -3,36 +3,34 @@ title: "Exploratory Data Analysis with Python"
 ---
 
 ```{r,  results="asis", eval = eval_num, echo = FALSE}
-code1 <- "# Column indices of selected continuous variables:
+text <- "# Column indices of selected continuous variables
 cols_continuous = ["
 indices <- which(colnames(df_code) %in% colnames(df_num))
 indices <- indices-1
-code <- paste0(code1,paste0(paste(indices, collapse = ','), "]"))
-codechunk(code, style=list("border"="0", "background-color"="#FFFFFF"))
+code <- paste0(text,paste0(paste(indices, collapse = ','), "]"))
+codechunk(code, style=list("background-color"="#FFFFFF"))
 ```
 
-```{whites, eval = FALSE, echo = eval_num}
+```{r, eval = FALSE, echo = eval_num}
 # Data frame of the continuous variables
 df_num = df.iloc[:,cols_continuous]
 ```
 
 ```{r, results="asis", eval = eval_factor, echo = FALSE}
-cat("<span style=\"background-color:white\">")
-cat("`# Column indices of selected discrete variables:` ")
-cat("<br>")  
+text <- "# Column indices of selected discrete variables
+cols_discrete = ["
 indices <- which(colnames(df_code) %in% colnames(df_factor))
-indices <- indices - 1
-cat("`cols_discrete = ")
-cat(paste0("[", paste(indices, collapse = ','), "]`"))
-cat("</span>")
+indices <- indices-1
+code <- paste0(text,paste0(paste(indices, collapse = ','), "]"))
+codechunk(code, style=list("background-color"="#FFFFFF"))
 ```
 
-```{whites, eval = FALSE, echo = eval_factor}
+```{r, eval = FALSE, echo = eval_factor}
 # Data frame of the discrete variables
 df_cat = df.iloc[:,cols_discrete]
 ```
 
-```{whites, eval = FALSE, echo = eval_num}
+```{r, eval = FALSE, echo = eval_num}
 # Continuous variables, descriptive statistics
 df_num.sort_index(axis=1, inplace=True)
 df_num_stats = df_num.describe()
@@ -70,7 +68,7 @@ print(tabulate(df_num_stats, headers='keys', tablefmt="simple"))
 ```
 
 
-```{whites, eval = FALSE, echo = eval_num}
+```{r, eval = FALSE, echo = eval_num}
 # Function for Histogram
 def histo(ax, var, ylabel, xsize):
     sns.histplot(df_num.iloc[:,var], ax = ax, stat='density', 
@@ -96,7 +94,7 @@ for var in range(df_num.shape[1]):
 ```
 
 
-```{whites, eval = FALSE, echo = eval_num2}
+```{r, eval = FALSE, echo = eval_num2}
 # Function little helper to message the axs list to have correct length
 def trim_axs(axs, N):
     axs = axs.flat
@@ -105,6 +103,7 @@ def trim_axs(axs, N):
     return axs[:N]
 
 # Summary Histogram Plots
+## Set number of cols and rows
 nrow = math.ceil(np.sqrt(df_num.shape[1]))
 ncol = math.ceil(df_num.shape[1] / nrow)
 fig, ax = plt.subplots(nrow, ncol)
@@ -116,4 +115,126 @@ for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
 plt.show()
 ```
 
+
+```{r, eval = FALSE, echo = eval_num}
+# Function for Box-Plot
+def box(ax, var, xsize):
+    sns.boxplot(x=df_num.iloc[:,var], ax = ax, color = '#2fa42d')
+    ax.set_xlabel(df_num.columns[var], fontsize=xsize)
+    title = "Box-Plot of " + str(df_num.columns[var])
+    ax.set_title(title)
+
+# Large Box-Plots 
+sns.set_theme(style="whitegrid")
+for var in range(df_num.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  box(ax, var, 25)
+  plt.show()
+  if (var==0):
+    plt.plot()
+  plt.close(fig)
+```
+
+
+```{r, eval = FALSE, echo = eval_num2}
+# Summary Box-Plots
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_num.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
+   box(ax, var, 15)
+plt.show()
+```
+
+
+```{r, eval = FALSE, echo = eval_num}
+# Function for ECDF Plot
+def ecdf(ax, var, xsize):
+    sns.ecdfplot(df_num.iloc[:,var], ax = ax, color = '#2fa42d')
+    minvar = df_num.iloc[:,var].min()
+    maxvar = df_num.iloc[:,var].max()
+    xaxis = np.arange(minvar, maxvar, 0.001)
+    fit_normal = stats.norm.cdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
+    ax.plot(xaxis, fit_normal, lw = 1, color = '#396e9f')
+    ax.set_xlabel(df_num.columns[var], fontsize=xsize)
+    ax.set_ylabel("ECDF") 
+
+# Large ECDF Plots    
+for var in range(df_num.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  ecdf(ax, var, 15)
+  plt.show()
+  if (var==0):
+    plt.plot()
+```
+
+
+```{r, eval = FALSE, echo = eval_num2}
+# ECDF Plots Summary
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_num.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
+   ecdf(ax, var, 10)
+plt.show()
+```
+
+
+```{r, eval = FALSE, echo = eval_num}
+# Function for QQ Plot
+def qqplot(var, ax, xlabel, ylabel, title):
+    pp = sm.ProbPlot(df_num.iloc[:,var], fit=True)
+    pp.qqplot(marker='.', ax = ax, line = '45', 
+              markerfacecolor='#2fa42d', 
+              markeredgecolor='#2fa42d', alpha=0.9)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel + df_num.columns[var])
+    ax.set_title(title)
+ 
+# QQ-Plots Large       
+for var in range(df_num.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  qqplot(var, ax, "Normal Quantiles", "Sample Quantiles for ", "QQ-Plot")
+  plt.show()
+  if (var==0):
+    plt.plot()
+```
+
+
+```{r, eval = FALSE, echo = eval_num2}
+## QQ Plots Summary
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_num.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
+    qqplot(var, ax, "", "", "")
+plt.show()
+```
+
+
+
+```{r, eval = FALSE, echo = eval_factor}
+# Categorical Variables
+
+## Table 1
+df_cat = df_cat.astype("string")
+df_cat_stats = pd.DataFrame(df_cat.count(), columns=['N Obs'])
+df_cat_stats["N Missing"] = df_cat.apply(lambda x: (x == 'NA').sum()) # locally use df_cat.isna().sum()
+df_cat_stats["N Valid"] = (df_cat_stats["N Obs"] - df_cat_stats["N Missing"])
+df_cat_stats["% Complete"] = (df_cat_stats["N Valid"] / df_cat_stats["N Obs"])*100
+df_cat_stats["N Unique"] = df_cat.nunique(dropna=False)
+df_cat_stats = df_cat_stats.round(2)
+
+### Restrict size of characters of index 
+cnames = np.array(df_cat_stats.index).astype('str')
+csize = min(np.max(np.char.str_len(cnames)),25)
+df_cat_stats.index = list(map(lambda x: x[0:csize], cnames))
+
+### Sort by index and print
+df_cat_stats.sort_index(inplace=True)
+print(tabulate(df_cat_stats, headers='keys', tablefmt="simple"))
+```
 
