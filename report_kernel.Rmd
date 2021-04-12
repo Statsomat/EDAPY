@@ -379,16 +379,19 @@ if (exists("df_num")){
 ```
 
 
-```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
-## Histograms Summary (tested for ncols <=25)
-
-### Little helper to message the axs list to have correct length
+```{python, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+# Little helper to message the axs list to have correct length
 def trim_axs(axs, N):
     axs = axs.flat
     for ax in axs[N:]:
         ax.remove()
     return axs[:N]
+```
 
+
+
+```{python, eval=eval_num2, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+## Histograms Summary (tested for ncols <=25)
 ### Define number of columns and rows for the multi-plot 
 nrow = math.ceil(np.sqrt(df_num.shape[1]))
 ncol = math.ceil(df_num.shape[1] / nrow)

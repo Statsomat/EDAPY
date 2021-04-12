@@ -52,6 +52,7 @@ cat("\n# Python Code ", fill=TRUE)
 cat("If not already available, install Python and the packages defined further below. We recommend the Anaconda distribution (https://www.anaconda.com/) and Spyder as the IDE. Copy the code below, paste it in a new Python file. Change the path to your data in the line ")
 cat("`filepath = ...` ") 
 cat("Run the code. Explore the results. ")
+cat("Disclaimer: This is a code for learning. The data reading functionality from below will lead in most of data cases to identical results as in the PDF report of this app. Nevertheless, there may be data cases, for which you will need to manually adapt the lines corresponding to the variable selection(s). This issue will be improved in a forthcoming version of the app.")
 ```
 
 

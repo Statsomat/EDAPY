@@ -94,14 +94,17 @@ for var in range(df_num.shape[1]):
 ```
 
 
-```{r, eval = FALSE, echo = eval_num2}
-# Function little helper to message the axs list to have correct length
+```{r, eval = FALSE, echo = eval_code}
+# Function little helper to message the axes list to have correct length
 def trim_axs(axs, N):
     axs = axs.flat
     for ax in axs[N:]:
         ax.remove()
     return axs[:N]
+```
 
+
+```{r, eval = FALSE, echo = eval_num2}
 # Summary Histogram Plots
 ## Set number of cols and rows
 nrow = math.ceil(np.sqrt(df_num.shape[1]))
