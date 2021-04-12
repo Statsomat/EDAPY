@@ -130,8 +130,6 @@ for var in range(df_num.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
   box(ax, var, 25)
   plt.show()
-  if (var==0):
-    plt.plot()
   plt.close(fig)
 ```
 
@@ -143,7 +141,7 @@ fig.tight_layout(pad=3.0)
 ax = trim_axs(ax, df_num.shape[1])
 fig.subplots_adjust(hspace = 1)
 for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
-   box(ax, var, 15)
+   box(ax, var, 5)
 plt.show()
 ```
 
@@ -165,8 +163,6 @@ for var in range(df_num.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
   ecdf(ax, var, 15)
   plt.show()
-  if (var==0):
-    plt.plot()
 ```
 
 
@@ -198,8 +194,6 @@ for var in range(df_num.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
   qqplot(var, ax, "Normal Quantiles", "Sample Quantiles for ", "QQ-Plot")
   plt.show()
-  if (var==0):
-    plt.plot()
 ```
 
 
@@ -222,7 +216,7 @@ plt.show()
 ## Table 1
 df_cat = df_cat.astype("string")
 df_cat_stats = pd.DataFrame(df_cat.count(), columns=['N Obs'])
-df_cat_stats["N Missing"] = df_cat.apply(lambda x: (x == 'NA').sum()) # locally use df_cat.isna().sum()
+df_cat_stats["N Missing"] = df_cat.isna().sum()
 df_cat_stats["N Valid"] = (df_cat_stats["N Obs"] - df_cat_stats["N Missing"])
 df_cat_stats["% Complete"] = (df_cat_stats["N Valid"] / df_cat_stats["N Obs"])*100
 df_cat_stats["N Unique"] = df_cat.nunique(dropna=False)
@@ -236,5 +230,128 @@ df_cat_stats.index = list(map(lambda x: x[0:csize], cnames))
 ### Sort by index and print
 df_cat_stats.sort_index(inplace=True)
 print(tabulate(df_cat_stats, headers='keys', tablefmt="simple"))
+```
+
+
+```{r, eval = FALSE, echo = eval_factor}
+# Categorical Variables
+
+## Table 2
+
+## Data preparation 
+df_cat.sort_index(axis=1, inplace=True)
+df_cat_miss = df_cat.fillna('Missing') 
+
+## Restrict to first characters
+df_cat_miss = df_cat_miss.applymap(lambda x: x[0:csize])
+
+def freq(var):
+
+    ## Compute Frequency and Percent columns
+    x = df_cat_miss[var].value_counts(sort = True), 
+    y = df_cat_miss[var].value_counts(normalize = True, sort = True)
+    
+    xdf = pd.DataFrame(x).transpose()
+    ydf = pd.DataFrame(y)
+    
+    xdf.rename(columns = {xdf.columns[0]: "Frequency"}, inplace=True)
+    ydf.rename(columns = {ydf.columns[0]: "Percent"}, inplace=True)
+  
+    xdf["Category"] = xdf.index 
+    ydf["Category"] = ydf.index 
+    
+    ## Merge columns and define output df
+    df = xdf.merge(ydf, on = "Category")
+    df["Variable"] = var
+    df = df[["Variable", "Category", "Frequency", "Percent"]]
+    
+    ## Only the first 20 categories
+    df = df.head(n=20)
+    
+    return(df)
+   
+# Initialize list of dfs
+listdf = []
+for var in df_cat_miss.columns:
+    listdf.append(freq(var))
+    
+df_freq = pd.concat(listdf, ignore_index=True)
+print(tabulate(df_freq, headers='keys', tablefmt="simple", showindex=False))
+```
+
+
+
+```{r, eval = FALSE, echo = eval_factor}
+# Function for Bar-Plots
+def barplot(var, ax, type):
+    sns.countplot(x = df_cat_miss.columns[var], ax = ax, 
+               color = '#2fa42d', data = df_cat_miss, 
+               order = df_cat_miss.iloc[:,var].value_counts(ascending = True).index)
+               
+    # Rotate labels 
+    if df_cat_miss.iloc[:,var].nunique() in range(10,41):
+      ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="right")
+    
+    # No labels for variables with ncats > 40 or type summary
+    if df_cat_miss.iloc[:,var].nunique() > 40 or type=="Summary":
+      ax.set_xticklabels([])  
+      
+    ax.set_xlabel(df_cat_miss.columns[var])
+    ax.set_ylabel("Frequency") 
+    title = "Bar-Plot of " + str(df_cat_miss.columns[var])
+    ax.set_title(title)
+
+# Bar-Plots Large    
+for var in range(df_cat_miss.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  barplot(var, ax, type="Large")
+  plt.show()
+```
+
+
+```{r, eval = FALSE, echo = eval_factor2}
+# Bar-Plots Summary
+## Set shape of rows and columns 
+nrow = math.ceil(np.sqrt(df_cat.shape[1]))
+ncol = math.ceil(df_cat.shape[1] / nrow)
+fig, ax = plt.subplots(nrow, ncol)
+fig.tight_layout(pad=3.0)
+ax = trim_axs(ax, df_cat.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_cat.shape[1])):
+    barplot(var, ax, type="Summary")
+plt.show()
+```
+
+
+```{r, eval = FALSE, echo = eval_factor}
+# Function for Pie-Plots
+def pieplot(var,ax, titlesize, textsize, radius):
+    cats =  df_cat_miss.iloc[:,var].value_counts()
+    labels = cats.index
+    ax.pie(x = cats, autopct="%.1f%%", explode=[0]*len(labels), 
+            labels = labels, pctdistance=0.7, 
+            textprops={'fontsize': textsize}, shadow = True, radius = radius)
+    ax.set_title("Pie-Plot of " + df_cat_miss.columns[var], 
+                 fontsize = titlesize, pad=10)
+    
+# Pie-Plots Large    
+for var in range(df_cat_miss.shape[1]):
+  fig, ax = plt.subplots(nrows = 1, ncols=1)
+  pieplot(var, ax, titlesize=14, textsize=8, radius=1)
+  plt.show()
+```
+
+
+```{r, eval = FALSE, echo = eval_factor2}
+# Pie-Plots Summary 
+plt.rcParams.update(plt.rcParamsDefault)
+fig, ax = plt.subplots(nrow, ncol, sharex=True, sharey=True, figsize=(10,10))
+ax = trim_axs(ax, df_cat.shape[1])
+fig.subplots_adjust(hspace = 1)
+for ax, var in zip(ax.flatten(), range(df_cat.shape[1])):
+    pieplot(var, ax, titlesize=7, textsize=6, radius=1.2)
+plt.subplots_adjust(hspace=0.3, wspace=0.01) 
+plt.show()
 ```
 

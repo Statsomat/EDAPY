@@ -31,7 +31,7 @@ knitr::opts_chunk$set(comment = NA)
 # Style asis chunks
 codechunk <- function(text, style=list(color="white")){
   cat(
-    sprintf('<pre><code class="w" style="%s">%s</code></pre>', 
+    sprintf('<pre><code class="r" style="%s">%s</code></pre>', 
             do.call(function(...) sprintf(paste(c(names(style), ""), collapse = ":%s;"), ...), unname(style)), 
             code))
 }

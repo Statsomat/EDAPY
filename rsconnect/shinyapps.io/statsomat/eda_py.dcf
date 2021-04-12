@@ -1,0 +1,12 @@
+name: eda_py
+title: eda_py
+username:
+account: statsomat
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3806804
+bundleId: 4460490
+url: https://statsomat.shinyapps.io/eda_py/
+when: 1618226459.77378
+asMultiple: FALSE
+asStatic: FALSE

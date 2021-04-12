@@ -88,7 +88,6 @@ df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
 if (ncol(df_num)>0){
 
   rateunique_df <- sapply(df_num, function(col) continuous(col))
-  cols_continuous <- names(which(rateunique_df == TRUE))
   
   if (params$continuity == "severe"){
     df_cont <- df_num[,rateunique_df,drop=FALSE] # numeric, continuous resp. assumption fulfilled 
@@ -175,7 +174,7 @@ if (exists("df_cont")){
   cat("Variables considered continuous: ", fill=TRUE)
   if (ncol(df_cont)>0){
     cat(ncol(df_cont),fill=TRUE)
-    knitr::kable(cols_continuous, col.names = "Variables considered continuous", linesep = '', longtable=T) %>%
+    knitr::kable(colnames(df_cont), col.names = "Variables considered continuous", linesep = '', longtable=T) %>%
       kable_styling(font_size = 8, position = "center", full_width = FALSE, latex_options = c("HOLD_position","repeat_header"))
   } else {
     cat("0", fill=TRUE)
@@ -331,8 +330,6 @@ if (exists("df_num")){
     cat("### Histograms", fill=TRUE)
     if(dim(df_num)[2]==1){
       cat("Details: Density Histogram. The blue line represents the normal density approximation. The green line represents a special kernel density approximation.  ", fill=TRUE)
-      cat("\\newline", fill=TRUE)
-      cat("Figure on next page. ", fill=TRUE)
     }
   } 
 }
@@ -472,8 +469,6 @@ if (exists("df_num")){
   } else if (dim(df_num)[2]>1){
     cat("### ECDF Plots", fill=TRUE)
     cat(" One ECDF (Empirical Cumulative Distribution Function) Plot per page for each variable. Variables are sorted alphabetically. The blue line represents the CDF of a normal distribution. If the variable is normally distributed, the blue line approximates well the ECDF.  ", fill=TRUE)
-    cat("\\newline", fill=TRUE)
-    cat("See figures on next page. ", fill=TRUE)
   }
 }
 ```
