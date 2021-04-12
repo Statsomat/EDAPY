@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Data Analysis (EDA)"
+title: "Python Code for EDA"
 author: "Statsomat.com"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: 
@@ -45,14 +45,15 @@ if (exists("eval")) eval_code <- eval else eval_code <- FALSE
 ```
 
 ```{r, results="asis", eval = eval_code, echo = FALSE}
-cat("\n# Python Code ", fill=TRUE)
+cat("\n## Instructions", fill=TRUE)
 ```
 
 ```{r, results="asis", eval = eval_code, echo = FALSE}
 cat("If not already available, install Python and the packages defined further below. We recommend the Anaconda distribution (https://www.anaconda.com/) and Spyder as the IDE. Copy the code below, paste it in a new Python file. Change the path to your data in the line ")
 cat("`filepath = ...` ") 
 cat("Run the code. Explore the results. ")
-cat("Disclaimer: This is a code for learning. The data reading functionality from below will lead in most of data cases to identical results as in the PDF report of this app. Nevertheless, there may be data cases, for which you will need to manually adapt the lines corresponding to the variable selection(s). This issue will be improved in a forthcoming version of the app.")
+cat("\\newline")
+cat("Disclaimer: Due to differences between your local system and the app running on Shinyapps.io, the code below does not claim to replicate indubitably the tables and graphs contained in the PDF report. ")
 ```
 
 
@@ -110,7 +111,8 @@ if (params$decimal == "auto"){
 } else {
 
   # User selection for decimal
-  cat(paste0("`df = pd.read_csv(filepath, sep = None, decimal = \"", params$decimal,"\",  keep_default_na = False, na_values = \'\')`"))
+  text2 <- paste0("`df = pd.read_csv(filepath, sep = None, decimal = \"", params$decimal,"\",  keep_default_na = False, na_values = \'\')`")
+  
 }
 
 code <- paste0(text1,text2)

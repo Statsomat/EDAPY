@@ -14,10 +14,10 @@ shinyUI(fluidPage(
   ),
   
   # Reload button
-  actionButton("reload", "Reload the App", style="
-                                    color: black;
-                                    background-color: #ff9900;
-                                    float: right"),
+#  actionButton("reload", "Reload the App", style="
+                                #    color: black;
+                                #    background-color: #ff9900;
+                                #    float: right"),
   
   # Style uploading modal
   tags$head(tags$style(".modal-body {padding: 10px}
