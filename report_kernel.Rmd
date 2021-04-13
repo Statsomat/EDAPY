@@ -217,13 +217,13 @@ if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
 
 \pagebreak
 
-```{r, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+```{r, eval = eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Copy
 if (exists("df_cont")) df_num <- df_cont
 if (exists("df_cat")) df_factor <- df_cat
 ```
 
-```{r, eval=eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
+```{r, eval = eval, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE}
 # Send df to Python 
 ## Call Python environment 
 main <- import_main()
@@ -284,7 +284,7 @@ df_num_stats["N Obs"] = df_num.shape[0]
 df_num_stats["N Missing"] = df_num.isna().sum()
 df_num_stats["% Complete"] = (df_num_stats["N Valid"] / df_num_stats["N Obs"])*100
 df_num_stats["N Unique"] = df_num.nunique(dropna=True)
-df_num_stats["MAD"] = df_num.mad(axis=0)
+df_num_stats["MAD"] = df_num.apply(lambda x: stats.median_abs_deviation(x, scale="normal"))    
 df_num_stats["Skewness"] = df_num.skew(axis=0)
 df_num_stats["Kurtosis"] = df_num.kurtosis(axis=0)
 df_num_stats.loc[df_num_stats["Min"]>0,"CV"] = df_num_stats["SD"] / df_num_stats["Mean"]
