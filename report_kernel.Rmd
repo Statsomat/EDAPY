@@ -229,6 +229,7 @@ if (exists("df_cat")) df_factor <- df_cat
 main <- import_main()
 ## Replace NA with NaN in df_num to be converted correctly by reticulate 
 df_num[is.na(df_num)] <- NaN
+df_cat[is.na(df_cat)] <- NaN
 ## Add data frames to Python environment 
 if (exists("df_cont")) main$df_num <- r_to_py(df_num)
 if (exists("df_cat")) main$df_cat <- r_to_py(df_cat)
@@ -547,7 +548,8 @@ if (exists("df_num")){
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 ## QQ Large
 def qqplotf(var, ax, xlabel, ylabel, title):
-    sm.qqplot(df_num.iloc[:,var], fit=True, ax = ax, line = '45')
+    var_dropna = df_num.iloc[:,var].dropna()
+    sm.qqplot(var_dropna, fit=True, ax = ax, line = '45')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel + df_num.columns[var])
     ax.set_title(title)
@@ -608,12 +610,12 @@ if (exists("df_factor")){
 
 ```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8), results="asis"}
 # Categorical Variables
-
-## Table 1
-df_cat = df_cat.astype("string")
-df_cat_stats = pd.DataFrame(df_cat.count(), columns=['N Obs'])
-df_cat_stats["N Missing"] = df_cat.apply(lambda x: (x == 'NA').sum()) # locally use df_cat.isna().sum()
-df_cat_stats["N Valid"] = (df_cat_stats["N Obs"] - df_cat_stats["N Missing"])
+## Table Totals 
+nobs = np.ones(df_cat.shape[1])*df_cat.shape[0]
+nobs = nobs.astype(int)
+df_cat_stats = pd.DataFrame(nobs, columns=['N Obs'], index=df_cat.columns)
+df_cat_stats["N Missing"] = df_cat.apply(lambda x: (x == 'NA').sum() + x.isna().sum())
+df_cat_stats["N Valid"] = df_cat.count()
 df_cat_stats["% Complete"] = (df_cat_stats["N Valid"] / df_cat_stats["N Obs"])*100
 df_cat_stats["N Unique"] = df_cat.nunique(dropna=False)
 df_cat_stats = df_cat_stats.round(2)
@@ -644,19 +646,20 @@ if (exists("df_factor")){
 
 ```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8), results="asis"}
 # Categorical Variables
-
-## Table 2
-
+## Table Frequencies
 ## Data preparation 
 df_cat.sort_index(axis=1, inplace=True)
-df_cat_miss = df_cat.replace('NA','Missing') # df_cat_miss = df_cat.fillna('Missing') locally for the user 
+df_cat_miss = df_cat.fillna('Missing')
+df_cat_miss.replace(to_replace='NA', value='Missing', inplace=True) 
 
 ## Restrict to first characters
+df_cat_miss = df_cat_miss.astype("string")
 df_cat_miss = df_cat_miss.applymap(lambda x: x[0:csize])
 
+### Function to compute freq per variable
 def freq(var):
 
-    ## Compute Frequency and Percent columns
+    # Compute Frequency and Percent columns
     x = df_cat_miss[var].value_counts(sort = True), 
     y = df_cat_miss[var].value_counts(normalize = True, sort = True)
     
@@ -669,12 +672,12 @@ def freq(var):
     xdf["Category"] = xdf.index 
     ydf["Category"] = ydf.index 
     
-    ## Merge columns and define output df
+    # Merge columns and define output df
     df = xdf.merge(ydf, on = "Category")
     df["Variable"] = var
     df = df[["Variable", "Category", "Frequency", "Percent"]]
     
-    ## Only the first 20 categories
+    # Only the first 20 categories
     df = df.head(n=20)
     
     return(df)
