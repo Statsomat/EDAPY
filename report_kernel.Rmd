@@ -227,7 +227,7 @@ if (exists("df_cat")) df_factor <- df_cat
 # Send df to Python 
 ## Call Python environment 
 main <- import_main()
-## Replace NA with NaN in df_num to be converted correctly by reticulate 
+## Replace NA with NaN to be converted correctly by reticulate 
 df_num[is.na(df_num)] <- NaN
 df_cat[is.na(df_cat)] <- NaN
 ## Add data frames to Python environment 
@@ -245,10 +245,10 @@ from scipy import stats
 import math
 import statsmodels.api as sm
 from tabulate import tabulate
-import sys
-if not sys.warnoptions:
-    import warnings
-    warnings.simplefilter("ignore")
+#import sys
+#if not sys.warnoptions:
+    #import warnings
+    #warnings.simplefilter("ignore")
 
 # Set console printing options 
 pd.set_option('display.max_rows', 500)
@@ -285,7 +285,7 @@ df_num_stats["N Obs"] = df_num.shape[0]
 df_num_stats["N Missing"] = df_num.isna().sum()
 df_num_stats["% Complete"] = (df_num_stats["N Valid"] / df_num_stats["N Obs"])*100
 df_num_stats["N Unique"] = df_num.nunique(dropna=True)
-df_num_stats["MAD"] = df_num.apply(lambda x: stats.median_abs_deviation(x, scale="normal"))    
+df_num_stats["MAD"] = df_num.apply(lambda x: stats.median_abs_deviation(x, scale="normal", nan_policy='omit'))    
 df_num_stats["Skewness"] = df_num.skew(axis=0)
 df_num_stats["Kurtosis"] = df_num.kurtosis(axis=0)
 df_num_stats.loc[df_num_stats["Min"]>0,"CV"] = df_num_stats["SD"] / df_num_stats["Mean"]
@@ -614,7 +614,7 @@ if (exists("df_factor")){
 nobs = np.ones(df_cat.shape[1])*df_cat.shape[0]
 nobs = nobs.astype(int)
 df_cat_stats = pd.DataFrame(nobs, columns=['N Obs'], index=df_cat.columns)
-df_cat_stats["N Missing"] = df_cat.apply(lambda x: (x == 'NA').sum() + x.isna().sum())
+df_cat_stats["N Missing"] = df_cat.apply(lambda x: (x == 'NaN').sum() + x.isna().sum())
 df_cat_stats["N Valid"] = df_cat.count()
 df_cat_stats["% Complete"] = (df_cat_stats["N Valid"] / df_cat_stats["N Obs"])*100
 df_cat_stats["N Unique"] = df_cat.nunique(dropna=False)
@@ -649,8 +649,7 @@ if (exists("df_factor")){
 ## Table Frequencies
 ## Data preparation 
 df_cat.sort_index(axis=1, inplace=True)
-df_cat_miss = df_cat.fillna('Missing')
-df_cat_miss.replace(to_replace='NA', value='Missing', inplace=True) 
+df_cat_miss.replace(to_replace='NaN', value='Missing', inplace=True) 
 
 ## Restrict to first characters
 df_cat_miss = df_cat_miss.astype("string")
