@@ -44,7 +44,7 @@ df_cat = df.iloc[:,cols_discrete]
 
 ```{r, eval = FALSE, echo = eval_num}
 # Continuous variables, descriptive statistics
-df_num.sort_index(axis=1, inplace=True)
+df_num.sort_index(axis=1, inplace=True, key=lambda x: x.str.lower())
 df_num_stats = df_num.describe()
 df_num_stats = df_num_stats.transpose()
 df_num_stats.drop(columns=['25%', '75%'], inplace=True)
@@ -66,9 +66,6 @@ df_num_stats = df_num_stats.reindex(columns=["N Obs", "N Missing", "N Valid",
                                              "% Complete", "N Unique", "Mean", 
                                              "SD", "Median", "MAD", "Min", "Max", 
                                              "Skewness", "Kurtosis", "CV"]) 
-
-## Sort by variable name
-df_num_stats.sort_index(inplace=True)
 
 ## Restrict size of characters of index 
 cnames = np.array(df_num_stats.index).astype('str')
@@ -209,8 +206,6 @@ for var in range(df_num.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
   qqplotf(var, ax, "Normal Quantiles", "Sample Quantiles for ", "QQ-Plot")
   plt.show()
-  if (var==0):
-    plt.plot()
 ```
 
 
@@ -232,6 +227,8 @@ plt.show()
 ## Table Totals 
 nobs = np.ones(df_cat.shape[1])*df_cat.shape[0]
 nobs = nobs.astype(int)
+df_cat.sort_index(axis=1, inplace=True, key=lambda x: x.str.lower())
+df_cat = df_cat.astype("string")
 df_cat_stats = pd.DataFrame(nobs, columns=['N Obs'], index=df_cat.columns)
 df_cat_stats["N Missing"] = df_cat.isna().sum()
 df_cat_stats["N Valid"] = df_cat.count()
@@ -244,22 +241,17 @@ cnames = np.array(df_cat_stats.index).astype('str')
 csize = min(np.max(np.char.str_len(cnames)),25)
 df_cat_stats.index = list(map(lambda x: x[0:csize], cnames))
 
-### Sort by index 
-df_cat_stats.sort_index(inplace=True)
+### Output
 print(tabulate(df_cat_stats, headers='keys', tablefmt="simple"))
 ```
 
 
 ```{r, eval = FALSE, echo = eval_factor}
 # Categorical Variables
-## Table Frequencies
-## Data preparation 
-df_cat.sort_index(axis=1, inplace=True)
-df_cat_miss = df_cat.fillna('Missing')
-#df_cat_miss.replace(to_replace='NA', value='Missing', inplace=True) 
 
-## Restrict to first characters
-df_cat_miss = df_cat_miss.astype("string")
+## Table Frequencies
+### Data preparation 
+df_cat_miss = df_cat.fillna('Missing')
 df_cat_miss = df_cat_miss.applymap(lambda x: x[0:csize])
 
 ### Function to compute freq per variable

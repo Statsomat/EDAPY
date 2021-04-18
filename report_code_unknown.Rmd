@@ -53,7 +53,7 @@ cat("If not already available, install Python and the packages defined further b
 cat("`filepath = ...` ") 
 cat("Run the code. Explore the results. ")
 cat("\\newline")
-cat("Disclaimer: Due to differences between your local system and the app running on Shinyapps.io, the code below does not claim to replicate indubitably the tables and graphs contained in the PDF report. ")
+cat("Disclaimer: Due to differences between your local system and the app running on Shinyapps.io, the results generated locally by executing the folling code may be different to the PDF report. ")
 ```
 
 

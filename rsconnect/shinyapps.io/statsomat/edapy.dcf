@@ -5,8 +5,8 @@ account: statsomat
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3949587
-bundleId: 4471077
+bundleId: 4486017
 url: https://statsomat.shinyapps.io/edapy/
-when: 1618416344.26544
+when: 1618733661.19869
 asMultiple: FALSE
 asStatic: FALSE

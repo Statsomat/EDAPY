@@ -82,9 +82,9 @@ df[ ,cols_logical] <- sapply(df[ ,cols_logical], as.character)
 col_names_numeric <- sapply(df, function(col) length(unique(na.omit(col))) < 7L & is.numeric(col))
 df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
 
-# Extract numerical variables and sort by variable
+# Extract numerical variables 
 df_num <- df[which(sapply(df, is.numeric) == 1L)]
-df_num <- df_num[,order(colnames(df_num)),drop=FALSE] 
+
 
 # Extract approximate continuous variables and non-continuous var
 if (ncol(df_num)>0){
@@ -111,6 +111,10 @@ if (exists("df_noncont")){
 } else {
   df_cat <- df_factor
 }
+
+# Sort by variable name 
+df_cont <- df_cont[,order(colnames(df_cont)),drop=FALSE] 
+df_cat <- df_cat[,order(colnames(df_cat)),drop=FALSE] 
 
 # Initialize next computations
 eval <- TRUE
@@ -245,10 +249,10 @@ from scipy import stats
 import math
 import statsmodels.api as sm
 from tabulate import tabulate
-#import sys
-#if not sys.warnoptions:
-    #import warnings
-    #warnings.simplefilter("ignore")
+import sys
+if not sys.warnoptions:
+    import warnings
+    warnings.simplefilter("ignore")
 
 # Set console printing options 
 pd.set_option('display.max_rows', 500)
@@ -274,8 +278,8 @@ if (exists("df_num")){
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, results="asis"}
 # Continuous variables
 ## Descriptive statistics
-### Sort by column name
-df_num.sort_index(axis=1, inplace=True)
+### Sort by variable name
+df_num.sort_index(axis=1, inplace=True, key=lambda x: x.str.lower())
 df_num_stats = df_num.describe()
 df_num_stats = df_num_stats.transpose()
 df_num_stats.drop(columns=['25%', '75%'], inplace=True)
@@ -297,9 +301,6 @@ df_num_stats = df_num_stats.reindex(columns=["N Obs", "N Missing", "N Valid",
                                              "% Complete", "N Unique", "Mean", 
                                              "SD", "Median", "MAD", "Min", "Max", 
                                              "Skewness", "Kurtosis", "CV"]) 
-
-### Sort by variable name
-df_num_stats.sort_index(inplace=True)
 
 ### Restrict size of characters of index 
 cnames = np.array(df_num_stats.index).astype('str')
@@ -613,9 +614,11 @@ if (exists("df_factor")){
 ## Table Totals 
 nobs = np.ones(df_cat.shape[1])*df_cat.shape[0]
 nobs = nobs.astype(int)
+df_cat.sort_index(axis=1, inplace=True, key=lambda x: x.str.lower())
+df_cat = df_cat.astype("string")
 df_cat_stats = pd.DataFrame(nobs, columns=['N Obs'], index=df_cat.columns)
 df_cat_stats["N Missing"] = df_cat.apply(lambda x: (x == 'NaN').sum() + x.isna().sum())
-df_cat_stats["N Valid"] = df_cat.count()
+df_cat_stats["N Valid"] = df_cat_stats["N Obs"] - df_cat_stats["N Missing"]
 df_cat_stats["% Complete"] = (df_cat_stats["N Valid"] / df_cat_stats["N Obs"])*100
 df_cat_stats["N Unique"] = df_cat.nunique(dropna=False)
 df_cat_stats = df_cat_stats.round(2)
@@ -625,8 +628,7 @@ cnames = np.array(df_cat_stats.index).astype('str')
 csize = min(np.max(np.char.str_len(cnames)),25)
 df_cat_stats.index = list(map(lambda x: x[0:csize], cnames))
 
-### Sort by index 
-df_cat_stats.sort_index(inplace=True)
+### Table
 print(tabulate(df_cat_stats, headers='keys', tablefmt="latex_longtable"))
 ```
 
@@ -647,12 +649,12 @@ if (exists("df_factor")){
 ```{python, eval=eval_factor, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8), results="asis"}
 # Categorical Variables
 ## Table Frequencies
-## Data preparation 
-df_cat.sort_index(axis=1, inplace=True)
+
+### Data preparation 
+df_cat_miss = df_cat.fillna('Missing')
 df_cat_miss.replace(to_replace='NaN', value='Missing', inplace=True) 
 
-## Restrict to first characters
-df_cat_miss = df_cat_miss.astype("string")
+### Restrict to first characters
 df_cat_miss = df_cat_miss.applymap(lambda x: x[0:csize])
 
 ### Function to compute freq per variable
