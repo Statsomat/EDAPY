@@ -343,10 +343,9 @@ if (exists("df_num")){
 
 ```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 ## Histograms Large
-def histo(ax, var, ylabel, xsize):
+def histo(ax, var, ylabel, xsize, title):
     sns.histplot(df_num.iloc[:,var], ax = ax, stat='density', 
-                 color = '#2fa42d', kde = True, 
-                 bins = len(np.unique(df_num.iloc[:,var]))//2)
+                 color = '#2fa42d', kde = True)
     minvar = df_num.iloc[:,var].min()
     maxvar = df_num.iloc[:,var].max()
     xaxis = np.arange(minvar, maxvar, 0.001)
@@ -355,13 +354,12 @@ def histo(ax, var, ylabel, xsize):
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
     ax.set_ylabel(ylabel)
-    title = "Histogram of " + str(df_num.columns[var])
     ax.set_title(title)
 
 sns.set_style()
 for var in range(df_num.shape[1]):
   fig, ax = plt.subplots(nrows = 1, ncols=1)
-  histo(ax, var, "Density", 25)
+  histo(ax, var, "Density", 25, title="Histogram")
   plt.show()
   if (var==0):
     plt.plot()
@@ -402,7 +400,7 @@ fig.tight_layout(pad=3.0)
 ax = trim_axs(ax, df_num.shape[1])
 fig.subplots_adjust(hspace = 1)
 for ax, var in zip(ax.flatten(), range(df_num.shape[1])):
-   histo(ax, var, "", 8)
+   histo(ax, var, "", 8, title="")
 plt.show()
 ```
 
@@ -655,7 +653,7 @@ df_cat_miss = df_cat.fillna('Missing')
 df_cat_miss.replace(to_replace='NaN', value='Missing', inplace=True) 
 
 ### Restrict to first characters
-df_cat_miss = df_cat_miss.applymap(lambda x: x[0:csize])
+df_cat_miss = df_cat_miss.applymap(lambda x: x[0:19])
 
 ### Function to compute freq per variable
 def freq(var):
