@@ -75,4 +75,20 @@ Hmisc::describe(df_cat)
 ```
 
 
+# Dataset Finance.csv
+
+```{r}
+# Upload and prepare dfs
+filepath = "Finance.csv"
+df <- fread(filepath, dec = ",", data.table=FALSE)
+```
+
+```{r}
+# Data frame of the continuous variables
+df_num <- df
+
+# Validate table for continuous variables
+kable(stat.desc(df_num),digits=2)
+psych::describe(df_num)
+```
 
