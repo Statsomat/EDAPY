@@ -4,7 +4,7 @@ shinyUI(fluidPage(
   
   # Disconnect message
   disconnectMessage(
-    text = "Your session timed out or error. ",
+    text = "Your session timed out or out of memory. ",
     refresh = "Reload now",
     background = "#ff9900",
     colour = "white",
@@ -13,11 +13,6 @@ shinyUI(fluidPage(
     refreshColour = "black"
   ),
   
-  # Reload button
-#  actionButton("reload", "Reload the App", style="
-                                #    color: black;
-                                #    background-color: #ff9900;
-                                #    float: right"),
   
   # Style uploading modal
   tags$head(tags$style(".modal-body {padding: 10px}
@@ -36,7 +31,7 @@ shinyUI(fluidPage(
                     position: fixed;
                     top: 10px;
                     left: calc(50% - 400px);;
-                    width: 850px;
+                    width: 950px;
                     /* Make sure it draws above all Bootstrap components */
                     z-index: 2000;
                     background-color: #ff9900;
@@ -76,7 +71,7 @@ shinyUI(fluidPage(
      background-color: #396e9f;
      padding: 20px;
      margin-bottom: 0px;"),
-  h5("Statsomat/edapy", 
+  h5("Statsomat/EDAPY", 
      style = "font-family: 'Helvetica';
      color: #fff; text-align: center;
      background-color: #2fa42d;
@@ -137,7 +132,7 @@ shinyUI(fluidPage(
                       
                       h3("Select Variables (max 25)"),
                       
-                      h5("Olny blanks as missing values"),
+                      h5("Only blanks as missing values"),
                       
                       uiOutput("selection1")
                     

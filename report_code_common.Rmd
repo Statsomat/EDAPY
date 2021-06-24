@@ -1,5 +1,5 @@
 ---
-title: "Python Code for EDA"
+title: ""
 ---
 
 ```{r,  results="asis", eval = eval_rows, echo = FALSE}
@@ -84,7 +84,7 @@ def histo(ax, var, ylabel, xsize, title):
                  color = '#2fa42d', kde = True)
     minvar = df_num.iloc[:,var].min()
     maxvar = df_num.iloc[:,var].max()
-    xaxis = np.arange(minvar, maxvar, 0.001)
+    xaxis = np.arange(minvar, maxvar, 0.1)
     fit_normal = stats.norm.pdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
     ax.plot(xaxis, fit_normal, lw = 1, color = '#396e9f')
     ax.tick_params(axis='both', which='major', labelsize=10)
@@ -162,7 +162,7 @@ def ecdf(ax, var, xsize):
     sns.ecdfplot(df_num.iloc[:,var], ax = ax, color = '#2fa42d')
     minvar = df_num.iloc[:,var].min()
     maxvar = df_num.iloc[:,var].max()
-    xaxis = np.arange(minvar, maxvar, 0.001)
+    xaxis = np.arange(minvar, maxvar, 0.1)
     fit_normal = stats.norm.cdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
     ax.plot(xaxis, fit_normal, lw = 1, color = '#396e9f')
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
@@ -275,6 +275,9 @@ def freq(var):
     
     # Only the first 20 categories
     df = df.head(n=20)
+    
+    # Sort also by Category
+    df.sort_values(by=['Frequency', 'Category'], ascending = {False, True}, inplace=True)
     
     return(df)
    

@@ -7,7 +7,6 @@ output:
     latex_engine: xelatex
     toc: true
     toc_depth: 2
-bibliography: ["references.bib"]
 classoption: landscape
 params:
   data: NA

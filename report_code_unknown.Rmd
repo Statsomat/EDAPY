@@ -1,7 +1,5 @@
 ---
-title: "Python Code for EDA"
-author: "Statsomat.com"
-date: "`r format(Sys.time(), '%d %B %Y')`"
+title: ""
 output: 
   html_document:
     toc: true
@@ -43,19 +41,6 @@ codechunk <- function(text, style=list(color="white")){
 ```{r include=FALSE}
 if (exists("eval")) eval_code <- eval else eval_code <- FALSE
 ```
-
-```{r, results="asis", eval = eval_code, echo = FALSE}
-cat("\n## Instructions", fill=TRUE)
-```
-
-```{r, results="asis", eval = eval_code, echo = FALSE}
-cat("If not already available, install Python and the packages defined further below. We recommend the Anaconda distribution (https://www.anaconda.com/) and Spyder as the IDE. Copy the code below, paste it in a new Python file. Change the path to your data in the line ")
-cat("`filepath = ...` ") 
-cat("Run the code. Explore the results. ")
-cat("\\newline")
-cat("Disclaimer: Due to differences between your local system and the app running on Shinyapps.io, the results generated locally by executing the folling code may be different to the PDF report. ")
-```
-
 
 ```{r, eval = FALSE, echo = eval_code}
 # Import required libraries
@@ -111,7 +96,7 @@ if (params$decimal == "auto"){
 } else {
 
   # User selection for decimal
-  text2 <- paste0("`df = pd.read_csv(filepath, sep = None, decimal = \"", params$decimal,"\",  keep_default_na = False, na_values = \'\')`")
+  text2 <- paste0("pd.read_csv(filepath, sep = None, decimal = \"", params$decimal,"\",  keep_default_na = False, na_values = \'\')")
   
 }
 

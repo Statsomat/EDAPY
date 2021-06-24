@@ -159,8 +159,8 @@ function(input, output, session) {
     removeModal()
     
     
-    if (nrow(datainput()) > 5000){
-      showNotification("Maximum sample size exceeded. For more contact: support@statsomat.com", duration=30)
+    if (nrow(datainput()) > 10000){
+      showNotification("Maximum sample size exceeded. ", duration=30)
       Sys.sleep(5)
       session$close()
     }
@@ -303,6 +303,9 @@ function(input, output, session) {
   })
   
 
+  
+  
+   
   # Download report  
   output$download <- downloadHandler(
     

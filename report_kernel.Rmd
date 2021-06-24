@@ -94,11 +94,14 @@ if (ncol(df_num)>0){
   if (params$continuity == "severe"){
     df_cont <- df_num[,rateunique_df,drop=FALSE] # numeric, continuous resp. assumption fulfilled 
     df_noncont <- df_num[,!rateunique_df,drop=FALSE] # numeric, non-continuous 
+    
   } else {
     df_cont <- df_num 
   }
   
-} 
+} else {
+   df_cont <- df_num 
+}
 
 # Extract character variables 
 df_factor <- df[which(sapply(df, is.character) == 1L)]
@@ -121,7 +124,7 @@ eval <- TRUE
 
 }, error=function(e) {
   
-  stop(safeError("Dataset cannot be prepared. Please check the data for consistency."))
+  stop(safeError("Dataset cannot be prepared. Try other upload settings and check your data for compatibility reasons."))
   
 }
 
@@ -341,14 +344,14 @@ if (exists("df_num")){
 }
 ```
 
-```{python, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
+```{python histolarge, eval=eval_num, echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.dim = c(14,8)}
 ## Histograms Large
 def histo(ax, var, ylabel, xsize, title):
     sns.histplot(df_num.iloc[:,var], ax = ax, stat='density', 
                  color = '#2fa42d', kde = True)
     minvar = df_num.iloc[:,var].min()
     maxvar = df_num.iloc[:,var].max()
-    xaxis = np.arange(minvar, maxvar, 0.001)
+    xaxis = np.arange(minvar, maxvar, 0.1)
     fit_normal = stats.norm.pdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
     ax.plot(xaxis, fit_normal, lw = 1, color = '#396e9f')
     ax.tick_params(axis='both', which='major', labelsize=10)
@@ -487,7 +490,7 @@ def ecdf(ax, var, xsize):
     sns.ecdfplot(df_num.iloc[:,var], ax = ax, color = '#2fa42d')
     minvar = df_num.iloc[:,var].min()
     maxvar = df_num.iloc[:,var].max()
-    xaxis = np.arange(minvar, maxvar, 0.001)
+    xaxis = np.arange(minvar, maxvar, 0.1)
     fit_normal = stats.norm.cdf(xaxis, df_num.iloc[:,var].mean(), df_num.iloc[:,var].std())    
     ax.plot(xaxis, fit_normal, lw = 1, color = '#396e9f')
     ax.set_xlabel(df_num.columns[var], fontsize=xsize)
@@ -678,6 +681,9 @@ def freq(var):
     
     # Only the first 20 categories
     df = df.head(n=20)
+    
+    # Sort also by Category
+    df.sort_values(by=['Frequency', 'Category'], ascending = {False, True}, inplace=True)
     
     return(df)
    
