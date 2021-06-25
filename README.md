@@ -8,7 +8,7 @@ is one of several apps which can be accessed via the webpage of Statsomat (see h
 a nonprofit company with the aim of developing, collecting and maintaining open-source apps for automated data analysis and
 automated interpretation. 
 
-You can also access the app directly  https://statsomat.shinyapps.io/EDAPY/. 
+You can also access the app directly  https://statsomat.shinyapps.io/edapy/. 
 
 # Installation 
 There is no need to install the Statsomat/EDAPY app since it runs in the browser. If you really want to run it locally, 
@@ -22,7 +22,7 @@ Before running the app locally, please consider to install required R and Python
 
 # Example Usage
 The dataset HolzingerSwineford1939.csv extracted from the R package `lavaan` is contained in the repository and can be used as an example. 
-Follow also the *Instructions* described directly on the webpage of the app https://statsomat.shinyapps.io/EDAPY/. 
+Follow also the *Instructions* described directly on the webpage of the app https://statsomat.shinyapps.io/edapy/. 
 
 
 # Functionality
