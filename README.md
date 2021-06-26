@@ -18,7 +18,7 @@ then download the repository and run the app from the project folder:
 shiny::runApp()
 ```
 
-Before running the app locally, please consider to install required R and Python packages. Moreover, you need to update the `.Renviron` file for your local system (in the repo it is setup for [shinyapps.io](https://www.shinyapps.io/)
+Before running the app locally, please consider to install required R and Python packages. Moreover, you need to update the `.Renviron` file for your local system - in the repo it is setup for [shinyapps.io](https://www.shinyapps.io/)
 
 # Example Usage
  Choose a CSV file to upload and follow the *Instructions* described directly on the webpage of the app https://statsomat.shinyapps.io/edapy/. 
