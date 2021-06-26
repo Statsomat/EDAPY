@@ -18,7 +18,7 @@ then download the repository and run the app from the project folder:
 shiny::runApp()
 ```
 
-Before running the app locally, please consider to install required R and Python packages. 
+Before running the app locally, please consider to install required R and Python packages. Moreover, you need to update the `.Renviron` file for your local system (in the repo it is setup for [shinyapps.io](https://www.shinyapps.io/)
 
 # Example Usage
 The dataset HolzingerSwineford1939.csv extracted from the R package `lavaan` is contained in the repository and can be used as an example. 
