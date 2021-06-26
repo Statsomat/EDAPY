@@ -21,8 +21,7 @@ shiny::runApp()
 Before running the app locally, please consider to install required R and Python packages. Moreover, you need to update the `.Renviron` file for your local system (in the repo it is setup for [shinyapps.io](https://www.shinyapps.io/)
 
 # Example Usage
-The dataset HolzingerSwineford1939.csv extracted from the R package `lavaan` is contained in the repository and can be used as an example. 
-Follow also the *Instructions* described directly on the webpage of the app https://statsomat.shinyapps.io/edapy/. 
+ Choose a CSV file to upload and follow also the *Instructions* described directly on the webpage of the app https://statsomat.shinyapps.io/edapy/. 
 
 
 # Functionality
