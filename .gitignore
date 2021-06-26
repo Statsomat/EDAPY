@@ -3,3 +3,4 @@
 .Rhistory
 .Rproj.user
 rsconnect/shinyapps.io/statsomat/edapy.dcf
+*.dcf
