@@ -223,8 +223,6 @@ function(input, output, session) {
   
     src0 <- normalizePath('report_kernel.Rmd') 
     src1 <- normalizePath('report.Rmd')
-    src2 <- normalizePath('Logo.jpg')
-    src3 <- normalizePath('logo.Rmd')
     src4 <- normalizePath('references.bib')
     src5 <- normalizePath('report_code_unknown.Rmd') 
     src6 <- normalizePath('report_code_common.Rmd') 
@@ -236,8 +234,6 @@ function(input, output, session) {
     on.exit(setwd(owd))
     file.copy(src0, 'report_kernel.Rmd', overwrite = TRUE)
     file.copy(src1, 'report.Rmd', overwrite = TRUE)
-    file.copy(src2, 'Logo.jpg', overwrite = TRUE)
-    file.copy(src3, 'logo.Rmd', overwrite = TRUE)
     file.copy(src4, 'references.bib', overwrite = TRUE)
     file.copy(src5, 'report_code_unknown.Rmd', overwrite = TRUE)
     file.copy(src6, 'report_code_common.Rmd', overwrite = TRUE)

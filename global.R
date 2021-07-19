@@ -9,5 +9,5 @@ library(readr)
 library(shinydisconnect)
 library(reticulate)
 
-source("chooser.R")
+source("helpers/chooser.R")
 source("helpers/Functions.R")
