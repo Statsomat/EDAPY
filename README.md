@@ -5,7 +5,7 @@ R `reticulate` package.
 
 The Statsomat/EDAPY app is hosted on [shinyapps.io](https://www.shinyapps.io/) and 
 is one of several apps which can be accessed via the webpage of Statsomat (see https://statsomat.com), 
-a nonprofit company with the aim of developing, collecting and maintaining open-source apps for automated data analysis and
+a nonprofit portal with the aim of developing, collecting and maintaining open-source apps for automated data analysis and
 automated interpretation. 
 
 You can also access the app directly  https://statsomat.shinyapps.io/edapy/. 
